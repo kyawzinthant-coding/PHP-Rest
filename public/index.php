@@ -28,11 +28,11 @@ $router->get('/', function () {
     echo json_encode(['message' => 'Welcome to the Pure PHP E-commerce API']);
 });
 
-$router->get('/api/v1/products', [ProductController::class, 'index']);
+$router->get('/api/v1/products',  [ProductController::class, 'index']);
 $router->post('/api/v1/products', [ProductController::class, 'store']);
 
-$router->get('/api/v1/products/{id}', [ProductController::class, 'show']);
-$router->put('/api/v1/products/{id}', [ProductController::class, 'update']);
+$router->get('/api/v1/products/{id}', [ProductController::class, 'GetProductById']);
+$router->post('/api/v1/products/{id}', [ProductController::class, 'update']);
 $router->delete('/api/v1/products/{id}', [ProductController::class, 'destroy']);
 
 // Get the requested URI and method

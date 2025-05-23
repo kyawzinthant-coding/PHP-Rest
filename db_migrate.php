@@ -15,9 +15,11 @@ try {
 
     $sql = "
     CREATE TABLE IF NOT EXISTS products (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id CHAR(36) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
         price DECIMAL(10, 2) NOT NULL,
+        product_image_url VARCHAR(500) DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );

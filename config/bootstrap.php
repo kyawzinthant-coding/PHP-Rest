@@ -24,6 +24,12 @@ define('DB_NAME', 'ecommerce_db');
 define('DB_USER', 'root');
 define('DB_PASS', ''); // Your MySQL password
 
+define('CLOUDINARY_CLOUD_NAME', 'df3jn4uqd'); // Replace with your Cloudinary Cloud Name
+define('CLOUDINARY_API_KEY', '245584398211485');       // Replace with your Cloudinary API Key
+define('CLOUDINARY_API_SECRET', '9HJk9CnXB68ld-T8Tsp-z38Dbqk'); // Replace with your Cloudinary API Secret
+
+define('CLOUDINARY_URL', 'cloudinary://245584398211485:9HJk9CnXB68ld-T8Tsp-z38Dbqk@df3jn4uqd');
+
 // Helper function for dumping variables (like console.log)
 if (!function_exists('dd')) {
     function dd(...$vars)
