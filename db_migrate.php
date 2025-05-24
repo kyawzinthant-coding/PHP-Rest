@@ -16,10 +16,11 @@ try {
     $sql = "
     CREATE TABLE IF NOT EXISTS products (
         id CHAR(36) PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NOT NULL UNIQUE,
         description TEXT NOT NULL,
         price DECIMAL(10, 2) NOT NULL,
         product_image_url VARCHAR(500) DEFAULT NULL,
+        cloudinary_public_id VARCHAR(255) DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );

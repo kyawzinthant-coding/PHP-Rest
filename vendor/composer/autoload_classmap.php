@@ -9,6 +9,7 @@ return array(
     'App\\Controller\\Product\\ProductController' => $baseDir . '/src/Controller/Product/ProductController.php',
     'App\\Core\\Database' => $baseDir . '/src/Core/Database.php',
     'App\\Core\\Router' => $baseDir . '/src/Core/Router.php',
+    'App\\Repository\\DuplicateEntryException' => $baseDir . '/src/Repository/DuplicateEntryException.php',
     'App\\Repository\\Product\\ProductRepository' => $baseDir . '/src/Repository/Product/ProductRepository.php',
     'Brick\\Math\\BigDecimal' => $vendorDir . '/brick/math/src/BigDecimal.php',
     'Brick\\Math\\BigInteger' => $vendorDir . '/brick/math/src/BigInteger.php',

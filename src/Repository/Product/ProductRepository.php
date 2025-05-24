@@ -8,6 +8,7 @@ use PDOException;
 use RuntimeException;
 use Ramsey\Uuid\Uuid;
 
+use App\Repository\DuplicateEntryException; // Make sure to include this line
 class ProductRepository
 {
     private PDO $db;
@@ -46,33 +47,32 @@ class ProductRepository
         }
     }
 
+
+
     public function create(array $data): string
     {
-        // Validate required field
-        echo json_encode($data);
-
-        // Check if product_image_url is set, if not, set it to null
         try {
 
             $newId = Uuid::uuid4()->toString();
+            $stmt = $this->db->prepare("INSERT INTO products (id,name, description, price, cloudinary_public_id) VALUES (:id ,:name, :description, :price, :cloudinary_public_id)");
 
-
-            $stmt = $this->db->prepare("INSERT INTO products (id,name, description, price,product_image_url) VALUES (:id,:name, :description, :price , :product_image_url)");
-            // Bind parameters to prevent SQL injection
+            // Removed: $stmt->bindValue(':id', $newId, PDO::PARAM_STR); // No longer binding ID
             $stmt->bindParam(':id', $newId, PDO::PARAM_STR);
-            $stmt->bindParam(':name', $data['name']);
-            $stmt->bindParam(':description', $data['description']);
-            $stmt->bindParam(':price', $data['price']);
-            $stmt->bindParam(':product_image_url', $data['product_image_url']);
+            $stmt->bindValue(':name', $data['name'], PDO::PARAM_STR);
+            $stmt->bindValue(':description', $data['description'], PDO::PARAM_STR);
+            $stmt->bindValue(':price', $data['price'], PDO::PARAM_STR);
+            $stmt->bindValue(':cloudinary_public_id', $data['cloudinary_public_id'], PDO::PARAM_STR);
+
             $stmt->execute();
             return $newId;
         } catch (PDOException $e) {
-            error_log($e->getMessage());
             error_log("Error in ProductRepository::create: " . $e->getMessage());
-            throw new RuntimeException("Could not create product in database.");
+            if ($e->getCode() === '23000') {
+                throw new DuplicateEntryException("Product with this name already exists.");
+            }
+            throw new RuntimeException("Could not create product in database: " . $e->getMessage());
         }
     }
-
     public function update(string $id, array $data): bool
     {
         try {
@@ -91,10 +91,11 @@ class ProductRepository
                 $updateFields[] = 'price = :price';
                 $bindValues[':price'] = [$data['price'], PDO::PARAM_STR];
             }
-            if (array_key_exists('product_image_url', $data)) {
-                $updateFields[] = 'product_image_url = :product_image_url';
-                $bindValues[':product_image_url'] = [$data['product_image_url'], PDO::PARAM_STR];
+            if (array_key_exists('cloudinary_public_id', $data)) {
+                $updateFields[] = 'cloudinary_public_id = :cloudinary_public_id';
+                $bindValues[':cloudinary_public_id'] = [$data['cloudinary_public_id'], PDO::PARAM_STR];
             }
+
 
             if (empty($updateFields)) {
                 return false;
@@ -131,8 +132,11 @@ class ProductRepository
             $stmt->execute();
             return $stmt->rowCount() > 0;
         } catch (PDOException $e) {
-            error_log($e->getMessage());
-            return false;
+            error_log("Error in ProductRepository::update: " . $e->getMessage());
+            if ($e->getCode() === '23000') { // SQLSTATE for Integrity Constraint Violation
+                throw new DuplicateEntryException("Product with this name already exists."); // <--- Throw custom exception
+            }
+            throw new RuntimeException("Could not update product in database: " . $e->getMessage());
         }
     }
 }

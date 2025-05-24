@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit7e165a21532ff7951b8dcbf8ba0ba58e
+class ComposerStaticInit1591adbd7afae12b0f966e6d7a1a65ab
 {
     public static $files = array (
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
@@ -97,6 +97,7 @@ class ComposerStaticInit7e165a21532ff7951b8dcbf8ba0ba58e
         'App\\Controller\\Product\\ProductController' => __DIR__ . '/../..' . '/src/Controller/Product/ProductController.php',
         'App\\Core\\Database' => __DIR__ . '/../..' . '/src/Core/Database.php',
         'App\\Core\\Router' => __DIR__ . '/../..' . '/src/Core/Router.php',
+        'App\\Repository\\DuplicateEntryException' => __DIR__ . '/../..' . '/src/Repository/DuplicateEntryException.php',
         'App\\Repository\\Product\\ProductRepository' => __DIR__ . '/../..' . '/src/Repository/Product/ProductRepository.php',
         'Brick\\Math\\BigDecimal' => __DIR__ . '/..' . '/brick/math/src/BigDecimal.php',
         'Brick\\Math\\BigInteger' => __DIR__ . '/..' . '/brick/math/src/BigInteger.php',
@@ -1139,9 +1140,9 @@ class ComposerStaticInit7e165a21532ff7951b8dcbf8ba0ba58e
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit7e165a21532ff7951b8dcbf8ba0ba58e::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit7e165a21532ff7951b8dcbf8ba0ba58e::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit7e165a21532ff7951b8dcbf8ba0ba58e::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit1591adbd7afae12b0f966e6d7a1a65ab::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit1591adbd7afae12b0f966e6d7a1a65ab::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit1591adbd7afae12b0f966e6d7a1a65ab::$classMap;
 
         }, null, ClassLoader::class);
     }

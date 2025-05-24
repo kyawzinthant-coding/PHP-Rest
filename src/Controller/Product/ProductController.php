@@ -3,14 +3,15 @@
 namespace App\Controller\Product;
 
 use App\Repository\Product\ProductRepository;
-use Exception; // Import the generic Exception class for general error handling
-use App\Service\CloudinaryImageUploader; // Import the CloudinaryImageUploader class
+use App\Service\CloudinaryImageUploader;
+use Exception;
+use RuntimeException;
+use App\Repository\DuplicateEntryException;
 
 class ProductController
 {
     private ProductRepository $productRepository;
     private CloudinaryImageUploader $imageUploader;
-
 
     public function __construct()
     {
@@ -23,13 +24,22 @@ class ProductController
         try {
             $products = $this->productRepository->GetALlProduct();
 
+            $transformedProducts = array_map(function ($product) {
+                if (!empty($product['cloudinary_public_id'])) {
+                    $product['image_url'] = "https://res.cloudinary.com/" . CLOUDINARY_CLOUD_NAME . "/image/upload/" . $product['cloudinary_public_id'] . ".webp";
+                } else {
+                    $product['image_url'] = null;
+                }
+                return $product;
+            }, $products);
+
             echo json_encode([
                 'status' => 'success',
                 'message' => 'Product list retrieved successfully',
-                'data' => $products
+                'data' => $transformedProducts
             ]);
             http_response_code(200);
-        } catch (Exception $e) { // Catch generic Exception
+        } catch (Exception $e) {
             http_response_code(500);
             echo json_encode([
                 'status' => 'error',
@@ -40,97 +50,133 @@ class ProductController
 
     public function store(): void
     {
-
         $data = $_POST;
-        $image_file = $_FILES['product_image'] ?? null;
+        $imageFile = $_FILES['product_image'] ?? null;
 
-
-        // Basic validation for required fields
         if (empty($data['name']) || empty($data['price'])) {
             http_response_code(400);
             echo json_encode([
                 'status' => 'error',
-                'message' => 'Invalid input data. Name, price are required.'
+                'message' => 'Invalid input data. Name and price are required.'
             ]);
             return;
         }
 
-        $uploadedImageUrl = null;
-        if ($image_file && $image_file['error'] === 0) {
-            // Validate the image file type and size
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-            if (!in_array($image_file['type'], $allowedTypes)) {
+        $cloudinaryPublicId = null;
+        $displayedImageUrl = null;
+
+        if ($imageFile && $imageFile['error'] === UPLOAD_ERR_OK) {
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!in_array($imageFile['type'], $allowedTypes)) {
                 http_response_code(400);
                 echo json_encode([
                     'status' => 'error',
-                    'message' => 'Invalid image file type. Only JPEG, PNG, and GIF are allowed.'
+                    'message' => 'Invalid image file type. Only JPEG, PNG, GIF, and WEBP are allowed.'
                 ]);
                 return;
             }
 
-            // Move the uploaded file to a temporary location
-            $tempPath = $image_file['tmp_name'];
-            $uploadedImageUrl = $this->imageUploader->uploadImage($tempPath, 'products/'); // Upload to Cloudinary
+            try {
+                $uploadResult = $this->imageUploader->uploadImage($imageFile['tmp_name'], 'products/');
+                $displayedImageUrl = $uploadResult['secure_url'];
+                $cloudinaryPublicId = $uploadResult['public_id'];
+            } catch (Exception $e) {
+                http_response_code(500);
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'Image upload failed: ' . $e->getMessage()
+                ]);
+                return;
+            }
+        } elseif ($imageFile && $imageFile['error'] !== UPLOAD_ERR_NO_FILE) {
+            http_response_code(400);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Image upload error: ' . $imageFile['error'] . ' (Code: ' . $imageFile['error'] . '). Check PHP upload limits.'
+            ]);
+            return;
         }
 
         $productData = [
             'name' => $data['name'],
-            'description' => $data['description'] ?? null, // Use null if not provided
-            'price' => (float)$data['price'], // Cast price to float/decimal
-            'product_image_url' => $uploadedImageUrl // Store the Cloudinary URL
+            'description' => $data['description'] ?? null,
+            'price' => (float)$data['price'],
+            'cloudinary_public_id' => $cloudinaryPublicId
         ];
-
 
         try {
             $newProductId = $this->productRepository->create($productData);
-
-            if (!$newProductId) {
-                http_response_code(500);
-                echo json_encode([
-                    'status' => 'error',
-                    'message' => 'Failed to create product.'
-                ]);
-                return;
-            }
 
             echo json_encode([
                 'status' => 'success',
                 'message' => 'Product created successfully',
                 'id' => $newProductId,
-                'data' => $productData
+                'data' => array_merge($productData, ['id' => $newProductId, 'image_url' => $displayedImageUrl])
             ]);
             http_response_code(201);
-        } catch (\RuntimeException $e) { // Catch RuntimeException from repository, meaning a DB issue
+        } catch (DuplicateEntryException $e) {
+            http_response_code(409);
+            echo json_encode([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ]);
+            if ($cloudinaryPublicId) {
+                try {
+                    $this->imageUploader->deleteImage($cloudinaryPublicId);
+                    error_log("Cleaned up orphaned Cloudinary image: {$cloudinaryPublicId} after duplicate entry.");
+                } catch (Exception $cleanupE) {
+                    error_log("Failed to clean up Cloudinary image after duplicate entry: " . $cleanupE->getMessage());
+                }
+            }
+        } catch (RuntimeException $e) {
+            if ($cloudinaryPublicId) {
+                try {
+                    $this->imageUploader->deleteImage($cloudinaryPublicId);
+                    error_log("Cleaned up orphaned Cloudinary image: {$cloudinaryPublicId} after DB error.");
+                } catch (Exception $cleanupE) {
+                    error_log("Failed to clean up Cloudinary image: {$cloudinaryPublicId} after DB error: " . $cleanupE->getMessage());
+                }
+            }
             http_response_code(500);
             echo json_encode([
                 'status' => 'error',
                 'message' => 'Failed to create product: ' . $e->getMessage()
             ]);
-        } catch (Exception $e) { // Catch any other unexpected exceptions
+        } catch (Exception $e) {
+            if ($cloudinaryPublicId) {
+                try {
+                    $this->imageUploader->deleteImage($cloudinaryPublicId);
+                    error_log("Cleaned up orphaned Cloudinary image: {$cloudinaryPublicId} after unexpected error.");
+                } catch (Exception $cleanupE) {
+                    error_log("Failed to clean up Cloudinary image: {$cloudinaryPublicId} after unexpected error: " . $cleanupE->getMessage());
+                }
+            }
             http_response_code(500);
             echo json_encode([
                 'status' => 'error',
-                'message' => 'An unexpected error occurred: ' . $e->getMessage()
+                'message' => 'An unexpected error occurred during product creation: ' . $e->getMessage()
             ]);
         }
     }
 
-    /**
-     * Display a single product by ID.
-     * @param int $id The product ID from the URL.
-     */
     public function GetProductById(string $id): void
     {
         try {
             $product = $this->productRepository->findById($id);
 
             if (!$product) {
-                http_response_code(404); // Not Found
+                http_response_code(404);
                 echo json_encode([
                     'status' => 'error',
                     'message' => 'Product not found.'
                 ]);
                 return;
+            }
+
+            if (!empty($product['cloudinary_public_id'])) {
+                $product['image_url'] = "https://res.cloudinary.com/" . CLOUDINARY_CLOUD_NAME . "/image/upload/" . $product['cloudinary_public_id'] . ".webp";
+            } else {
+                $product['image_url'] = null;
             }
 
             echo json_encode([
@@ -148,23 +194,16 @@ class ProductController
         }
     }
 
-    /**
-     * Update an existing product by ID.
-     * @param int $id The product ID from the URL.
-     */
     public function update(string $id): void
     {
         $data = $_POST;
         $imageFile = $_FILES['product_image'] ?? null;
-
-        // echo json_encode($data);
 
         if (empty($data) && $imageFile === null) {
             $input = file_get_contents('php://input');
             $data = json_decode($input, true);
         }
 
-        //validate required fields
         if (empty($data) && $imageFile === null) {
             http_response_code(400);
             echo json_encode([
@@ -188,12 +227,13 @@ class ProductController
             $productData = [
                 'name' => $data['name'] ?? $existingProduct['name'],
                 'description' => $data['description'] ?? $existingProduct['description'],
-                'price' => ($data['price'] ?? $existingProduct['price']),
-                'product_image_url' => $existingProduct['product_image_url']
+                'price' => (float)($data['price'] ?? $existingProduct['price']),
+                'cloudinary_public_id' => $existingProduct['cloudinary_public_id']
             ];
 
+            $displayedImageUrl = null;
+            $newCloudinaryPublicId = null;
 
-            $uploadedImageUrl = null;
             if ($imageFile && $imageFile['error'] === UPLOAD_ERR_OK) {
                 $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
                 if (!in_array($imageFile['type'], $allowedTypes)) {
@@ -206,11 +246,13 @@ class ProductController
                 }
 
                 try {
-                    $uploadedImageUrl = $this->imageUploader->uploadImage($imageFile['tmp_name'], 'products/');
-                    $productData['product_image_url'] = $uploadedImageUrl;
+                    $uploadResult = $this->imageUploader->uploadImage($imageFile['tmp_name'], 'products/');
+                    $displayedImageUrl = $uploadResult['secure_url'];
+                    $newCloudinaryPublicId = $uploadResult['public_id'];
+                    $productData['cloudinary_public_id'] = $newCloudinaryPublicId;
 
-                    if ($existingProduct['product_image_url']) {
-                        $this->imageUploader->deleteImage($existingProduct['product_image_url']);
+                    if ($existingProduct['cloudinary_public_id']) {
+                        $this->imageUploader->deleteImage($existingProduct['cloudinary_public_id']);
                     }
                 } catch (Exception $e) {
                     http_response_code(500);
@@ -220,11 +262,41 @@ class ProductController
                     ]);
                     return;
                 }
-            } elseif (isset($data['product_image_url']) && $data['product_image_url'] === null) {
-                if ($existingProduct['product_image_url']) {
+            } elseif ($imageFile && $imageFile['error'] !== UPLOAD_ERR_NO_FILE) {
+                // More specific error handling for PHP file upload errors
+                $errorMessage = 'Unknown image upload error.';
+                switch ($imageFile['error']) {
+                    case UPLOAD_ERR_INI_SIZE:
+                    case UPLOAD_ERR_FORM_SIZE:
+                        $errorMessage = 'Uploaded file exceeds PHP configured size limits.';
+                        break;
+                    case UPLOAD_ERR_PARTIAL:
+                        $errorMessage = 'The uploaded file was only partially uploaded.';
+                        break;
+                    case UPLOAD_ERR_NO_TMP_DIR:
+                        $errorMessage = 'Missing a temporary folder for uploads.';
+                        break;
+                    case UPLOAD_ERR_CANT_WRITE:
+                        $errorMessage = 'Failed to write file to disk.';
+                        break;
+                    case UPLOAD_ERR_EXTENSION:
+                        $errorMessage = 'A PHP extension stopped the file upload.';
+                        break;
+                    default:
+                        $errorMessage = 'An unexpected upload error occurred.';
+                        break;
+                }
+                http_response_code(400);
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'Image upload error: ' . $errorMessage . ' (Code: ' . $imageFile['error'] . ').'
+                ]);
+                return;
+            } elseif (array_key_exists('cloudinary_public_id', $data) && $data['cloudinary_public_id'] === null) {
+                if ($existingProduct['cloudinary_public_id']) {
                     try {
-                        $this->imageUploader->deleteImage($existingProduct['product_image_url']);
-                        $productData['product_image_url'] = null;
+                        $this->imageUploader->deleteImage($existingProduct['cloudinary_public_id']);
+                        $productData['cloudinary_public_id'] = null;
                     } catch (Exception $e) {
                         http_response_code(500);
                         echo json_encode([
@@ -236,11 +308,16 @@ class ProductController
                 }
             }
 
-
             $updated = $this->productRepository->update($id, $productData);
 
             if ($updated) {
                 $updatedProduct = $this->productRepository->findById($id);
+                if (!empty($updatedProduct['cloudinary_public_id'])) {
+                    $updatedProduct['image_url'] = "https://res.cloudinary.com/" . CLOUDINARY_CLOUD_NAME . "/image/upload/" . $updatedProduct['cloudinary_public_id'] . ".webp";
+                } else {
+                    $updatedProduct['image_url'] = null;
+                }
+
                 echo json_encode([
                     'status' => 'success',
                     'message' => 'Product updated successfully',
@@ -254,13 +331,43 @@ class ProductController
                     'message' => 'Product update failed or no changes were made.'
                 ]);
             }
-        } catch (\RuntimeException $e) {
+        } catch (DuplicateEntryException $e) {
+            http_response_code(409);
+            echo json_encode([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ]);
+            if ($newCloudinaryPublicId) {
+                try {
+                    $this->imageUploader->deleteImage($newCloudinaryPublicId);
+                    error_log("Cleaned up orphaned Cloudinary image: {$newCloudinaryPublicId} after duplicate update entry.");
+                } catch (Exception $cleanupE) {
+                    error_log("Failed to clean up Cloudinary image after duplicate update entry: " . $cleanupE->getMessage());
+                }
+            }
+        } catch (RuntimeException $e) {
+            if ($newCloudinaryPublicId) {
+                try {
+                    $this->imageUploader->deleteImage($newCloudinaryPublicId);
+                    error_log("Cleaned up orphaned Cloudinary image: {$newCloudinaryPublicId} after DB error during update.");
+                } catch (Exception $cleanupE) {
+                    error_log("Failed to clean up Cloudinary image: {$newCloudinaryPublicId} after DB error during update: " . $cleanupE->getMessage());
+                }
+            }
             http_response_code(500);
             echo json_encode([
                 'status' => 'error',
                 'message' => 'Failed to update product in DB: ' . $e->getMessage()
             ]);
         } catch (Exception $e) {
+            if ($newCloudinaryPublicId) {
+                try {
+                    $this->imageUploader->deleteImage($newCloudinaryPublicId);
+                    error_log("Cleaned up orphaned Cloudinary image: {$newCloudinaryPublicId} after unexpected error during update.");
+                } catch (Exception $cleanupE) {
+                    error_log("Failed to clean up Cloudinary image: {$newCloudinaryPublicId} after unexpected error during update: " . $cleanupE->getMessage());
+                }
+            }
             http_response_code(500);
             echo json_encode([
                 'status' => 'error',
@@ -269,17 +376,20 @@ class ProductController
         }
     }
 
-
     /**
      * Delete a product by ID.
      * @param int $id The product ID from the URL.
      */
     public function destroy(string $id): void
     {
-        echo json_encode($id);
         try {
             // Check if product exists before attempting to delete
             $existingProduct = $this->productRepository->findById($id);
+
+            if ($existingProduct['cloudinary_public_id']) {
+                $this->imageUploader->deleteImage($existingProduct['cloudinary_public_id']);
+            }
+
             if (!$existingProduct) {
                 http_response_code(404);
                 echo json_encode([
@@ -290,6 +400,7 @@ class ProductController
             }
 
             $deleted = $this->productRepository->delete($id);
+
 
             if ($deleted) {
                 echo json_encode([
