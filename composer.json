@@ -11,7 +11,8 @@
   "require": {
     "php": ">=8.1",
     "cloudinary/cloudinary_php": "^3.1",
-    "ramsey/uuid": "^4.7"
+    "ramsey/uuid": "^4.7",
+    "vlucas/phpdotenv": "^5.6"
   },
   "config": {
     "optimize-autoloader": true,
@@ -23,6 +24,7 @@
       "Composer\\Config::disableProcessTimeout",
       "php -S 127.0.0.1:8000 -t public"
     ],
-    "migrate": "php db_migrate.php"
+    "migrate": "php db_migrate.php",
+    "seed": "php db_seed.php"
   }
 }

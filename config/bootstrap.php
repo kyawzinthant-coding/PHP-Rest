@@ -1,9 +1,18 @@
 <?php
 
+require_once dirname(__DIR__) . '/vendor/autoload.php';
+
+use Dotenv\Dotenv;
+// Load environment variables from .env file
+$dotenv = Dotenv::createImmutable(dirname(__DIR__));
+
 // Basic error reporting for development
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+
+
+$dotenv->load();
 
 // Set default timezone (important for date/time functions)
 date_default_timezone_set('UTC');
@@ -19,14 +28,14 @@ define('PUBLIC_PATH', ROOT_PATH . '/public');
 // or load them from a .env file. Let's create a simple .env loader.
 
 // Database Configuration (for now, directly here. We'll improve this)
-define('DB_HOST', '127.0.0.1');
-define('DB_NAME', 'ecommerce_db');
-define('DB_USER', 'root');
-define('DB_PASS', ''); // Your MySQL password
+define('DB_HOST', $_ENV['DB_HOST']);
+define('DB_NAME', $_ENV['DB_NAME']);
+define('DB_USER', $_ENV['DB_USER']);
+define('DB_PASS', $_ENV['DB_PASS']);
 
-define('CLOUDINARY_CLOUD_NAME', 'df3jn4uqd'); // Replace with your Cloudinary Cloud Name
-define('CLOUDINARY_API_KEY', '245584398211485');       // Replace with your Cloudinary API Key
-define('CLOUDINARY_API_SECRET', '9HJk9CnXB68ld-T8Tsp-z38Dbqk'); // Replace with your Cloudinary API Secret
+define('CLOUDINARY_CLOUD_NAME', $_ENV['CLOUDINARY_CLOUD_NAME']);
+define('CLOUDINARY_API_KEY', $_ENV['CLOUDINARY_API_KEY']);
+define('CLOUDINARY_API_SECRET', $_ENV['CLOUDINARY_API_SECRET']);
 
 define('CLOUDINARY_URL', 'cloudinary://245584398211485:9HJk9CnXB68ld-T8Tsp-z38Dbqk@df3jn4uqd');
 

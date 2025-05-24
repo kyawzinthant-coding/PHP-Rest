@@ -66,13 +66,19 @@ class ProductRepository
             $stmt->execute();
             return $newId;
         } catch (PDOException $e) {
-            error_log("Error in ProductRepository::create: " . $e->getMessage());
             if ($e->getCode() === '23000') {
                 throw new DuplicateEntryException("Product with this name already exists.");
             }
             throw new RuntimeException("Could not create product in database: " . $e->getMessage());
         }
     }
+    /**
+     * Updates an existing product by its ID.
+     * @param string $id The product ID from the URL (now a UUID string).
+     * @param array $data The data to update for the product.
+     * @return bool True if the update was successful, false otherwise.
+     * @throws \App\Exception\RuntimeException If the update failed.
+     */
     public function update(string $id, array $data): bool
     {
         try {

@@ -3,17 +3,18 @@
 // 1. Load Composer's autoloader
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// 2. Load configuration (we'll create this next)
+// 2. Load configuration
 require_once __DIR__ . '/../config/bootstrap.php';
 
 use App\Core\Router;
 use App\Controller\Product\ProductController;
+use App\Exception\ValidationException;
+use App\Repository\DuplicateEntryException;
 
 header('Access-Control-Allow-Origin: *'); // Allow all origins for CORS (change this in production)
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization'); // Add any other headers your frontend might send
 header('Access-Control-Allow-Credentials: true'); // If you plan to send cookies/auth headers
-header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     // Just send the CORS headers and exit for OPTIONS requests
@@ -21,28 +22,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+// Set Content-Type for all other requests that will return JSON
+header('Content-Type: application/json');
+
 $router = new Router();
 
-// 3. Define routes (we'll create a separate file for this later)
+// 3. Define routes
 $router->get('/', function () {
     echo json_encode(['message' => 'Welcome to the Pure PHP E-commerce API']);
+    exit; // Good practice to exit after a direct response
 });
 
 $router->get('/api/v1/products',  [ProductController::class, 'index']);
 $router->post('/api/v1/products', [ProductController::class, 'store']);
-
 $router->get('/api/v1/products/{id}', [ProductController::class, 'GetProductById']);
 $router->post('/api/v1/products/{id}', [ProductController::class, 'update']);
 $router->delete('/api/v1/products/{id}', [ProductController::class, 'destroy']);
 
-// Get the requested URI and method
-// $_SERVER['REQUEST_URI']: Contains the full URI that was requested by the browser (e.g., `/api/v1/products?page=1`).
 $requestUri = $_SERVER['REQUEST_URI'];
-// $_SERVER['REQUEST_METHOD']: Contains the HTTP method (GET, POST, etc.)
 $requestMethod = $_SERVER['REQUEST_METHOD'];
 
+try {
+    $router->resolve($requestUri, $requestMethod);
+} catch (ValidationException $e) {
+    http_response_code(400); // Bad Request
+    echo json_encode([
+        'status' => 'error',
+        'message' => $e->getMessage(),
+        'errors' => $e->getErrors()
+    ]);
+    exit; // Terminate script
+} catch (DuplicateEntryException $e) {
+    http_response_code(409); // Conflict
+    echo json_encode([
+        'status' => 'error',
+        'message' => $e->getMessage()
+    ]);
+    exit; // Terminate script
+} catch (RuntimeException $e) {
+    http_response_code(500); // Internal Server Error
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'A runtime error occurred: ' . $e->getMessage()
+    ]);
+    error_log("Runtime Error: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine() . "\nStack trace:\n" . $e->getTraceAsString());
+    exit; // Terminate script
+} catch (Exception $e) {
+    http_response_code(500); // Internal Server Error
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'An unexpected error occurred: ' . $e->getMessage()
+    ]);
+    error_log("Unexpected Error: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine() . "\nStack trace:\n" . $e->getTraceAsString());
+    exit; // Terminate script
+}
 
-$router->resolve($requestUri, $requestMethod);
-
-// This prevents any further output or unexpected errors if not handled by a route
-// exit();
+// No code should execute here if a route was matched and handled, or an exception was caught.
+// If Router::notFound() is called, it will exit.
