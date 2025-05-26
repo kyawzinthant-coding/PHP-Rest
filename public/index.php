@@ -6,12 +6,14 @@ require_once __DIR__ . '/../vendor/autoload.php';
 // 2. Load configuration
 require_once __DIR__ . '/../config/bootstrap.php';
 
+use App\Controller\Auth\AuthController;
 use App\Core\Router;
 use App\Controller\Product\ProductController;
 use App\Exception\ValidationException;
+use App\Middleware\AuthMiddleware;
 use App\Repository\DuplicateEntryException;
 
-header('Access-Control-Allow-Origin: *'); // Allow all origins for CORS (change this in production)
+header('Access-Control-Allow-Origin:  http://localhost:5173 '); // Allow all origins for CORS (change this in production)
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization'); // Add any other headers your frontend might send
 header('Access-Control-Allow-Credentials: true'); // If you plan to send cookies/auth headers
@@ -33,11 +35,20 @@ $router->get('/', function () {
     exit; // Good practice to exit after a direct response
 });
 
+// product controller
 $router->get('/api/v1/products',  [ProductController::class, 'index']);
 $router->post('/api/v1/products', [ProductController::class, 'store']);
 $router->get('/api/v1/products/{id}', [ProductController::class, 'GetProductById']);
 $router->post('/api/v1/products/{id}', [ProductController::class, 'update']);
 $router->delete('/api/v1/products/{id}', [ProductController::class, 'destroy']);
+
+
+$router->post('/api/v1/auth/register', [AuthController::class, 'register']);
+$router->post('/api/v1/auth/login', [AuthController::class, 'login']);
+$router->post('/api/v1/auth/logout', [AuthController::class, 'logout']); // Add logout route
+
+// Route to get current user info (requires authentication)
+$router->get('/api/v1/auth/me', [AuthController::class, 'getCurrentUser'], [AuthMiddleware::class]);
 
 $requestUri = $_SERVER['REQUEST_URI'];
 $requestMethod = $_SERVER['REQUEST_METHOD'];
