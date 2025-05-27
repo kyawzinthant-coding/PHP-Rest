@@ -145,17 +145,9 @@ class AuthController
         // For now, let's return the data from the JWT payload
         http_response_code(200);
         echo json_encode([
-            'status' => 'success',
-            'message' => 'Current user data retrieved successfully.',
-            'data' => [
-                'user' => [
-                    'id' => $authenticatedUserData->id,
-                    'email' => $authenticatedUserData->email,
-                    'role' => $authenticatedUserData->role,
-                    // Add other fields from JWT payload if you put them there
-                    // Or from $fullUserDetails if you fetch from DB
-                ]
-            ]
+            'id' => $authenticatedUserData->id,
+            'email' => $authenticatedUserData->email,
+            'role' => $authenticatedUserData->role,
         ]);
     }
 }
