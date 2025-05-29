@@ -8,6 +8,7 @@ use PDOException;
 use RuntimeException;
 use Ramsey\Uuid\Uuid;
 
+
 use App\Repository\DuplicateEntryException; // Make sure to include this line
 class ProductRepository
 {
@@ -53,15 +54,44 @@ class ProductRepository
     {
         try {
 
+            // Generate a new UUID for the product ID
+
+            // echo "Creating product with data: " . json_encode($data) . "\n"; // Debugging line
+
             $newId = Uuid::uuid4()->toString();
-            $stmt = $this->db->prepare("INSERT INTO products (id,name, description, price, cloudinary_public_id) VALUES (:id ,:name, :description, :price, :cloudinary_public_id)");
+
+            $stmt = $this->db->prepare("
+                INSERT INTO products (
+                id, name, description, price, cloudinary_public_id,
+                brand_id, category_id, size_ml, stock_quantity,
+                top_notes, middle_notes, base_notes, gender_affinity,
+                is_active, slug
+            ) VALUES (
+                :id, :name, :description, :price, :cloudinary_public_id,
+                :brand_id, :category_id, :size_ml, :stock_quantity,
+                :top_notes, :middle_notes, :base_notes, :gender_affinity,
+                :is_active, :slug
+            )
+
+            ");
 
             // Removed: $stmt->bindValue(':id', $newId, PDO::PARAM_STR); // No longer binding ID
             $stmt->bindParam(':id', $newId, PDO::PARAM_STR);
+            $stmt->bindValue(':brand_id', $data['brand_id'], PDO::PARAM_STR);
             $stmt->bindValue(':name', $data['name'], PDO::PARAM_STR);
             $stmt->bindValue(':description', $data['description'], PDO::PARAM_STR);
             $stmt->bindValue(':price', $data['price'], PDO::PARAM_STR);
             $stmt->bindValue(':cloudinary_public_id', $data['cloudinary_public_id'], PDO::PARAM_STR);
+            $stmt->bindValue(':category_id', $data['category_id'], PDO::PARAM_STR);
+            $stmt->bindValue(':size_ml', $data['size_ml'], PDO::PARAM_INT);
+            $stmt->bindValue(':stock_quantity', $data['stock_quantity'] ?? 0, PDO::PARAM_INT);
+            $stmt->bindValue(':top_notes', $data['top_notes'] ?? '', PDO::PARAM_STR);
+            $stmt->bindValue(':middle_notes', $data['middle_notes'] ?? '', PDO::PARAM_STR);
+            $stmt->bindValue(':base_notes', $data['base_notes'] ?? '', PDO::PARAM_STR);
+            $stmt->bindValue(':is_active', !empty($data['is_active']) ? 1 : 0, PDO::PARAM_INT);
+            $stmt->bindValue(':slug', $data['slug'], PDO::PARAM_STR);
+            $stmt->bindValue(':gender_affinity', $data['gender_affinity'] ?? 'Unisex', PDO::PARAM_STR);
+
 
             $stmt->execute();
             return $newId;

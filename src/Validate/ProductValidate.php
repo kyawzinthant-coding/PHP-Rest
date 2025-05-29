@@ -21,99 +21,66 @@ class ProductValidate extends BaseRequest // Extend BaseRequest
      */
     public function validate(bool $isUpdate = false): array
     {
-        $name = trim($this->input('name'));
-        $description = trim($this->input('description'));
+        $fields = [
+            'name' => ['required' => true, 'min' => 3, 'max' => 255],
+            'description' => ['required' => true, 'min' => 10, 'max' => 1000],
+            'brand_id' => ['required' => true],
+            'category_id' => ['required' => true],
+            'size_ml' => ['required' => true, 'type' => 'int', 'min' => 1],
+            'stock_quantity' => ['required' => false, 'type' => 'int', 'min' => 0, 'default' => 0],
+            'top_notes' => ['max' => 500, 'default' => ''],
+            'middle_notes' => ['max' => 500, 'default' => ''],
+            'base_notes' => ['max' => 500, 'default' => ''],
+            'gender_affinity' => ['min' => 3, 'max' => 100, 'default' => 'Unisex']
+        ];
+
+        $validated = [];
+
+        foreach ($fields as $field => $rules) {
+            $value = trim($this->input($field, $rules['default'] ?? ''));
+
+            if ((!$isUpdate || $value !== '') && ($rules['required'] ?? false) && $value === '') {
+                $this->addError($field, ucfirst(str_replace('_', ' ', $field)) . ' is required.');
+                continue;
+            }
+
+            if (isset($rules['type']) && $value !== '') {
+                if ($rules['type'] === 'int' && (!is_numeric($value) || (int)$value < ($rules['min'] ?? 0))) {
+                    $this->addError($field, ucfirst($field) . ' must be a positive integer.');
+                    continue;
+                }
+                $value = (int)$value;
+            }
+
+            if (isset($rules['min']) && strlen($value) < $rules['min']) {
+                $this->addError($field, ucfirst($field) . " must be at least {$rules['min']} characters.");
+            }
+
+            if (isset($rules['max']) && strlen($value) > $rules['max']) {
+                $this->addError($field, ucfirst($field) . " must not exceed {$rules['max']} characters.");
+            }
+
+            $validated[$field] = $value;
+        }
+
+        // Price validation
         $price = $this->input('price');
-        $brand_id = $this->input('brand_id');
-        $category_id = $this->input('category_id');
-        $size_ml = $this->input('size_ml');
-        $stock_quantity = $this->input('stock_quantity', 0); // Default to 0 if not provided
-        $top_notes = $this->input('top_notes', '');
-        $middle_notes = $this->input('middle_notes', '');
-        $base_notes = $this->input('base_notes', '');
-        $gender_affinity = $this->input('gender_affinity', 'Unisex');
-
-        // Basic validation rules
-        if (!$isUpdate || !empty($name)) {
-            if (empty($name)) {
-                $this->addError('name', 'Product name is required.');
-            } elseif (strlen($name) < 3 || strlen($name) > 255) {
-                $this->addError('name', 'Product name must be between 3 and 255 characters.');
-            }
-        }
-        if (!$isUpdate || !empty($description)) {
-            if (empty($description)) {
-                $this->addError('description', 'Product description is required.');
-            } elseif (strlen($description) < 10 || strlen($description) > 1000) {
-                $this->addError('description', 'Product description must be between 10 and 1000 characters.');
-            }
-        }
-        if (!$isUpdate || !empty($brand_id)) {
-            if (empty($brand_id)) {
-                $this->addError('brand_id', 'Brand ID is required.');
-            } elseif (!is_numeric($brand_id) || (int)$brand_id <= 0) {
-                $this->addError('brand_id', 'Brand ID must be a positive integer.');
-            }
-        }
-        if (!$isUpdate || !empty($category_id)) {
-            if (empty($category_id)) {
-                $this->addError('category_id', 'Category ID is required.');
-            } elseif (!is_numeric($category_id) || (int)$category_id <= 0) {
-                $this->addError('category_id', 'Category ID must be a positive integer.');
-            }
-        }
-        if (!$isUpdate || !empty($size_ml)) {
-            if (empty($size_ml)) {
-                $this->addError('size_ml', 'Size in ml is required.');
-            } elseif (!is_numeric($size_ml) || (int)$size_ml <= 0) {
-                $this->addError('size_ml', 'Size in ml must be a positive integer.');
-            }
-        }
-        if (!$isUpdate || !empty($stock_quantity)) {
-            if (!is_numeric($stock_quantity) || (int)$stock_quantity < 0) {
-                $this->addError('stock_quantity', 'Stock quantity must be a non-negative integer.');
-            }
-            $stock_quantity = (int)$stock_quantity; // Cast to int
-        }
-        if (!$isUpdate || !empty($top_notes)) {
-            if (strlen($top_notes) > 500) {
-                $this->addError('top_notes', 'Top notes must not exceed 500 characters.');
-            }
-        }
-        if (!$isUpdate || !empty($middle_notes)) {
-            if (strlen($middle_notes) > 500) {
-                $this->addError('middle_notes', 'Middle notes must not exceed 500 characters.');
-            }
-        }
-        if (!$isUpdate || !empty($base_notes)) {
-            if (strlen($base_notes) > 500) {
-                $this->addError('base_notes', 'Base notes must not exceed 500 characters.');
-            }
-        }
-
-
-        // Price validation: required for create, optional for update (can be 0)
-        // Check if value is set OR if it's an update and no price was provided (meaning we don't validate it)
-        if (!$isUpdate || (isset($this->data['price']) && $this->data['price'] !== '')) {
+        if (!$isUpdate || (isset($this->data['price']) && $price !== '')) {
             if (!is_numeric($price) || (float)$price < 0) {
                 $this->addError('price', 'Product price must be a non-negative number.');
             }
-            $price = (float)$price; // Cast to float
+            $validated['price'] = (float)$price;
         }
 
-
-        // Image file validation using the base method
+        // Image validation
         $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        $maxSize = 5 * 1024 * 1024; // 5 MB
+        $maxSize = 5 * 1024 * 1024;
         $this->validateImageFile($this->imageFile, 'product_image', $allowedTypes, $maxSize);
 
-        $this->throwValidationException(); // Throws exception if errors exist
+        $this->throwValidationException();
 
-        return [
-            'name' => $name,
-            'description' => $description,
-            'price' => $price,
-            'image_file' => $this->imageFile && $this->imageFile['error'] === UPLOAD_ERR_OK ? $this->imageFile : null,
-        ];
+        $validated['image_file'] = $this->imageFile && $this->imageFile['error'] === UPLOAD_ERR_OK ? $this->imageFile : null;
+
+        return $validated;
     }
 }

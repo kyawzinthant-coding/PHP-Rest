@@ -89,10 +89,12 @@ class CategoryController
                 }
             }
 
-            $categoryDataForRepo = [
-                'name' => $validatedData['name'],
-                'category_cloudinary_public_id' => $cloudinaryPublicId,
-            ];
+            $categoryDataForRepo = array_merge(
+                ['id' => null, 'category_cloudinary_public_id' => $cloudinaryPublicId],
+                $validatedData
+            );
+
+
 
 
             $newCategoryID =  $this->categoryRepository->create($categoryDataForRepo);

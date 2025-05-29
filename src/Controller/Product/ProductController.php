@@ -10,6 +10,7 @@ use Exception;
 use RuntimeException;
 use App\Repository\DuplicateEntryException;
 use App\Utils\ImageUrlHelper;
+use App\utils\Tools;
 
 class ProductController
 {
@@ -52,6 +53,7 @@ class ProductController
             echo json_encode([
                 'status' => 'success',
                 'message' => 'Product list retrieved successfully',
+                'length' => count($transformedProducts),
                 'data' => $transformedProducts
             ]);
             http_response_code(200);
@@ -67,8 +69,6 @@ class ProductController
 
         try {
             $validator = new ProductValidate();
-            // The validate method will throw ValidationException if validation fails
-            // which will be caught by index.php
             $validatedData = $validator->validate(); // isUpdate = false by default
 
             $imageFile = $validatedData['image_file']; // Get validated image file info
@@ -84,12 +84,15 @@ class ProductController
                 }
             }
 
-            $productDataForRepo = [
-                'name' => $validatedData['name'],
-                'description' => $validatedData['description'],
-                'price' => $validatedData['price'],
-                'cloudinary_public_id' => $cloudinaryPublicId
-            ];
+
+
+            $tools = new Tools();
+            $productDataForRepo = array_merge(
+                ['cloudinary_public_id' => $cloudinaryPublicId],
+                ['slug' => $tools->generateSlug($validatedData['name'])],
+
+                $validatedData
+            );
 
             $newProductId = $this->productRepository->create($productDataForRepo);
             echo json_encode([
