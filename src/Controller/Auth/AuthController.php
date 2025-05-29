@@ -8,14 +8,17 @@ use App\Validate\AuthValidation;
 use App\Exception\ValidationException;
 use App\Exception\AuthenticationException;
 use App\Repository\DuplicateEntryException;
+use App\Repository\User\UserRepository;
 
 class AuthController
 {
     private AuthService $authService;
+    private UserRepository $userRepository;
 
     public function __construct()
     {
         $this->authService = new AuthService();
+        $this->userRepository = new UserRepository();
     }
 
     public function register(Request $request): void
@@ -27,14 +30,16 @@ class AuthController
 
         try {
             $validatedData = $validator->validateRegistration();
+
             $userId = $this->authService->registerUser($validatedData);
+
 
             if ($userId) {
                 http_response_code(201); // Created
                 echo json_encode([
                     'status' => 'success',
                     'message' => 'User registered successfully.',
-                    'data' => ['id' => $userId, 'email' => $validatedData['email']]
+                    'data' => ['id' => $userId, 'email' => $validatedData['email'], 'name' => $validatedData['name'], 'role' => $validatedData['role'] ?? 'user']
                 ]);
             } else {
                 // This case should ideally be caught by more specific exceptions from the service
@@ -134,20 +139,22 @@ class AuthController
 
         // The $authenticatedUserData from JWT payload might be enough.
         // If you need more details from the DB (that are not in the JWT):
-        // $fullUserDetails = $this->userRepository->findById($authenticatedUserData->id);
-        // if (!$fullUserDetails) {
-        //     http_response_code(404);
-        //     echo json_encode(['status' => 'error', 'message' => 'User not found in database.']);
-        //     return;
-        // }
+        $fullUserDetails = $this->userRepository->findById($authenticatedUserData->id);
+        if (!$fullUserDetails) {
+            http_response_code(404);
+            echo json_encode(['status' => 'error', 'message' => 'User not found in database.']);
+            return;
+        }
 
-
-        // For now, let's return the data from the JWT payload
         http_response_code(200);
         echo json_encode([
-            'id' => $authenticatedUserData->id,
-            'email' => $authenticatedUserData->email,
-            'role' => $authenticatedUserData->role,
+            'status' => 'success',
+            'data' => [
+                'id' => $fullUserDetails['id'],
+                'email' => $fullUserDetails['email'],
+                'name' => $fullUserDetails['name'] ?? 'Unknown',
+                'role' => $fullUserDetails['role'] ?? 'user',
+            ]
         ]);
     }
 }

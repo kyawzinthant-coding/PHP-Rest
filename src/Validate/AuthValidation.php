@@ -21,9 +21,15 @@ class AuthValidation extends BaseRequest
     {
 
         $email = filter_var(trim($this->input('email')), FILTER_SANITIZE_EMAIL);
+        $name = trim($this->input('name'));
         $password = $this->input('password');
         $role = $this->input('role', 'user'); // Default to 'user' if not provided
 
+        if (empty($name)) {
+            $this->addError('name', 'Name is required.');
+        } elseif (strlen($name) < 3 || strlen($name) > 255) {
+            $this->addError('name', 'Name must be between 3 and 255 characters.');
+        }
 
         if (empty($email)) {
             $this->addError('email', 'Email is required.');
@@ -42,6 +48,7 @@ class AuthValidation extends BaseRequest
         $this->throwValidationException(); // Throws exception if errors exist
 
         return [
+            'name' => $name,
             'email' => $email,
             'password' => $password,
             'role' => $role,

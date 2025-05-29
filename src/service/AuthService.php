@@ -23,9 +23,10 @@ class AuthService
         }
 
         $userData = [
+            'name' => $data['name'],
             'email' => $data['email'],
             'password' => $hashedPassword,
-            'role' => $data['role'] ?? 'user', // Default to 'user' if not provided
+            'role' => $data['role'] ?? 'user',
         ];
 
         return $this->userRepository->create($userData);

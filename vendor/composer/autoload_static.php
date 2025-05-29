@@ -141,13 +141,19 @@ class ComposerStaticInitef739e00aedf067f90a0cfc355a76f9f
     );
 
     public static $classMap = array (
+        'App\\Controller\\Auth\\AuthController' => __DIR__ . '/../..' . '/src/Controller/Auth/AuthController.php',
+        'App\\Controller\\Category\\CategoryController' => __DIR__ . '/../..' . '/src/Controller/Category/CategoryController.php',
         'App\\Controller\\Product\\ProductController' => __DIR__ . '/../..' . '/src/Controller/Product/ProductController.php',
         'App\\Core\\Database' => __DIR__ . '/../..' . '/src/Core/Database.php',
+        'App\\Core\\Request' => __DIR__ . '/../..' . '/src/Core/Request.php',
         'App\\Core\\Router' => __DIR__ . '/../..' . '/src/Core/Router.php',
         'App\\Exception\\ValidationException' => __DIR__ . '/../..' . '/src/Exception/ValidationException.php',
+        'App\\Repository\\Category\\CategoryRepository' => __DIR__ . '/../..' . '/src/Repository/Category/CategoryRepository.php',
         'App\\Repository\\DuplicateEntryException' => __DIR__ . '/../..' . '/src/Repository/DuplicateEntryException.php',
         'App\\Repository\\Product\\ProductRepository' => __DIR__ . '/../..' . '/src/Repository/Product/ProductRepository.php',
+        'App\\Validate\\AuthValidation' => __DIR__ . '/../..' . '/src/Validate/AuthValidation.php',
         'App\\Validate\\BaseRequest' => __DIR__ . '/../..' . '/src/Validate/BaseRequest.php',
+        'App\\Validate\\CategoryValidate' => __DIR__ . '/../..' . '/src/Validate/CategoryValidate.php',
         'App\\Validate\\ProductValidate' => __DIR__ . '/../..' . '/src/Validate/ProductValidate.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'Brick\\Math\\BigDecimal' => __DIR__ . '/..' . '/brick/math/src/BigDecimal.php',

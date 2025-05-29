@@ -48,10 +48,11 @@ class UserRepository
         // Generate UUID for new user if you're using UUIDs
         $userId = Uuid::uuid4()->toString(); // Or null if using auto-increment INT
 
-        $sql = "INSERT INTO users (id, email, password, role) VALUES (:id,  :email, :password, :role)";
+        $sql = "INSERT INTO users (id,name, email, password, role) VALUES (:id,:name,:email, :password, :role)";
         try {
             $stmt = $this->db->prepare($sql);
             $stmt->bindValue(':id', $userId); // Or bind null for auto-increment
+            $stmt->bindValue(':name', $data['name']); // Optional name field
             $stmt->bindValue(':email', $data['email']);
             $stmt->bindValue(':password', $data['password']); // Hashed password
             $stmt->bindValue(':role', $data['role'] ?? 'user');

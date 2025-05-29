@@ -3,7 +3,7 @@
         'name' => 'kyawzinthant/ecommerce-api',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'dbaf78d11f5d1b2b3ad0775d202816ed324750e9',
+        'reference' => '0909750084ff61abff59db35877770fc39dec9b1',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -85,7 +85,7 @@
         'kyawzinthant/ecommerce-api' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'dbaf78d11f5d1b2b3ad0775d202816ed324750e9',
+            'reference' => '0909750084ff61abff59db35877770fc39dec9b1',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

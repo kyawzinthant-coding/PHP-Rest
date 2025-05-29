@@ -7,6 +7,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../config/bootstrap.php';
 
 use App\Controller\Auth\AuthController;
+use App\Controller\Category\CategoryController;
 use App\Core\Router;
 use App\Controller\Product\ProductController;
 use App\Exception\ValidationException;
@@ -49,6 +50,12 @@ $router->post('/api/v1/auth/logout', [AuthController::class, 'logout']); // Add 
 
 // Route to get current user info (requires authentication)
 $router->get('/api/v1/auth/me', [AuthController::class, 'getCurrentUser'], [AuthMiddleware::class]);
+
+
+$router->get('/api/v1/category', [CategoryController::class, 'index']);
+$router->post('/api/v1/category', [CategoryController::class, 'create']);
+$router->delete('/api/v1/category/{id}', [CategoryController::class, 'delete']);
+// $router->get('/api/v1/category', [CategoryController::class, 'index']);
 
 $requestUri = $_SERVER['REQUEST_URI'];
 $requestMethod = $_SERVER['REQUEST_METHOD'];

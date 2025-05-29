@@ -24,7 +24,14 @@ class ProductValidate extends BaseRequest // Extend BaseRequest
         $name = trim($this->input('name'));
         $description = trim($this->input('description'));
         $price = $this->input('price');
-        $cloudinaryPublicId = $this->input('cloudinary_public_id'); // For explicit removal of image
+        $brand_id = $this->input('brand_id');
+        $category_id = $this->input('category_id');
+        $size_ml = $this->input('size_ml');
+        $stock_quantity = $this->input('stock_quantity', 0); // Default to 0 if not provided
+        $top_notes = $this->input('top_notes', '');
+        $middle_notes = $this->input('middle_notes', '');
+        $base_notes = $this->input('base_notes', '');
+        $gender_affinity = $this->input('gender_affinity', 'Unisex');
 
         // Basic validation rules
         if (!$isUpdate || !empty($name)) {
@@ -34,6 +41,56 @@ class ProductValidate extends BaseRequest // Extend BaseRequest
                 $this->addError('name', 'Product name must be between 3 and 255 characters.');
             }
         }
+        if (!$isUpdate || !empty($description)) {
+            if (empty($description)) {
+                $this->addError('description', 'Product description is required.');
+            } elseif (strlen($description) < 10 || strlen($description) > 1000) {
+                $this->addError('description', 'Product description must be between 10 and 1000 characters.');
+            }
+        }
+        if (!$isUpdate || !empty($brand_id)) {
+            if (empty($brand_id)) {
+                $this->addError('brand_id', 'Brand ID is required.');
+            } elseif (!is_numeric($brand_id) || (int)$brand_id <= 0) {
+                $this->addError('brand_id', 'Brand ID must be a positive integer.');
+            }
+        }
+        if (!$isUpdate || !empty($category_id)) {
+            if (empty($category_id)) {
+                $this->addError('category_id', 'Category ID is required.');
+            } elseif (!is_numeric($category_id) || (int)$category_id <= 0) {
+                $this->addError('category_id', 'Category ID must be a positive integer.');
+            }
+        }
+        if (!$isUpdate || !empty($size_ml)) {
+            if (empty($size_ml)) {
+                $this->addError('size_ml', 'Size in ml is required.');
+            } elseif (!is_numeric($size_ml) || (int)$size_ml <= 0) {
+                $this->addError('size_ml', 'Size in ml must be a positive integer.');
+            }
+        }
+        if (!$isUpdate || !empty($stock_quantity)) {
+            if (!is_numeric($stock_quantity) || (int)$stock_quantity < 0) {
+                $this->addError('stock_quantity', 'Stock quantity must be a non-negative integer.');
+            }
+            $stock_quantity = (int)$stock_quantity; // Cast to int
+        }
+        if (!$isUpdate || !empty($top_notes)) {
+            if (strlen($top_notes) > 500) {
+                $this->addError('top_notes', 'Top notes must not exceed 500 characters.');
+            }
+        }
+        if (!$isUpdate || !empty($middle_notes)) {
+            if (strlen($middle_notes) > 500) {
+                $this->addError('middle_notes', 'Middle notes must not exceed 500 characters.');
+            }
+        }
+        if (!$isUpdate || !empty($base_notes)) {
+            if (strlen($base_notes) > 500) {
+                $this->addError('base_notes', 'Base notes must not exceed 500 characters.');
+            }
+        }
+
 
         // Price validation: required for create, optional for update (can be 0)
         // Check if value is set OR if it's an update and no price was provided (meaning we don't validate it)

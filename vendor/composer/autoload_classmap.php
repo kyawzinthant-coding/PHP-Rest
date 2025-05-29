@@ -6,13 +6,19 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'App\\Controller\\Auth\\AuthController' => $baseDir . '/src/Controller/Auth/AuthController.php',
+    'App\\Controller\\Category\\CategoryController' => $baseDir . '/src/Controller/Category/CategoryController.php',
     'App\\Controller\\Product\\ProductController' => $baseDir . '/src/Controller/Product/ProductController.php',
     'App\\Core\\Database' => $baseDir . '/src/Core/Database.php',
+    'App\\Core\\Request' => $baseDir . '/src/Core/Request.php',
     'App\\Core\\Router' => $baseDir . '/src/Core/Router.php',
     'App\\Exception\\ValidationException' => $baseDir . '/src/Exception/ValidationException.php',
+    'App\\Repository\\Category\\CategoryRepository' => $baseDir . '/src/Repository/Category/CategoryRepository.php',
     'App\\Repository\\DuplicateEntryException' => $baseDir . '/src/Repository/DuplicateEntryException.php',
     'App\\Repository\\Product\\ProductRepository' => $baseDir . '/src/Repository/Product/ProductRepository.php',
+    'App\\Validate\\AuthValidation' => $baseDir . '/src/Validate/AuthValidation.php',
     'App\\Validate\\BaseRequest' => $baseDir . '/src/Validate/BaseRequest.php',
+    'App\\Validate\\CategoryValidate' => $baseDir . '/src/Validate/CategoryValidate.php',
     'App\\Validate\\ProductValidate' => $baseDir . '/src/Validate/ProductValidate.php',
     'Attribute' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
     'Brick\\Math\\BigDecimal' => $vendorDir . '/brick/math/src/BigDecimal.php',
