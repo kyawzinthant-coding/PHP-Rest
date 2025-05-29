@@ -70,12 +70,14 @@ class AuthController
             // Set the JWT as an HTTP-Only cookie
             $cookieName = 'accessToken';
             $cookieValue = $jwt;
-            $expiry = time() + (int)($_ENV['JWT_EXPIRATION_TIME_SECONDS'] ?? 3600);
+            $expiry = time() + (int)($_ENV['JWT_EXPIRATION_TIME_SECONDS']);
             $path = '/'; // Available on the entire domain
             $domain = $_ENV['APP_DOMAIN'] ?? ''; // Set to your domain in .env for production, empty for localhost
             $secure = isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'production'; // True if HTTPS in production
             $httpOnly = true; // Crucial: JavaScript cannot access it
             $sameSite = 'Lax'; // Or 'Strict' or 'None' (if 'None', $secure must be true)
+
+
 
             setcookie($cookieName, $cookieValue, [
                 'expires' => $expiry,
