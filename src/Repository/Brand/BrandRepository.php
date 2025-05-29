@@ -1,7 +1,6 @@
 <?php
 
-namespace App\Repository\Category;
-
+namespace App\Repository\Brand;
 
 use App\Core\Database;
 use PDO;
@@ -9,10 +8,9 @@ use PDOException;
 use RuntimeException;
 use Ramsey\Uuid\Uuid;
 
-
 use App\Repository\DuplicateEntryException;
 
-class CategoryRepository
+class BrandRepository
 {
     private PDO $db;
 
@@ -21,10 +19,10 @@ class CategoryRepository
         $this->db = Database::getInstance();
     }
 
-    public function getAllCategories(): array
+    public function getAllBrands(): array
     {
         try {
-            $stmt = $this->db->prepare("SELECT * FROM categories ORDER BY created_at DESC");
+            $stmt = $this->db->prepare("SELECT * FROM brands ORDER BY created_at DESC");
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
@@ -36,7 +34,7 @@ class CategoryRepository
     public function findById(string $id): ?array
     {
         try {
-            $stmt = $this->db->prepare("SELECT * FROM categories WHERE id = :id");
+            $stmt = $this->db->prepare("SELECT * FROM brands WHERE id = :id");
             $stmt->bindParam(':id', $id);
             $stmt->execute();
 
@@ -50,34 +48,31 @@ class CategoryRepository
     public function create(array $data): string
     {
         try {
-
-
             $newId = Uuid::uuid4()->toString();
-            $stmt = $this->db->prepare("INSERT INTO categories (id, name,category_cloudinary_public_id) VALUES (:id, :name,:category_cloudinary_public_id)");
+            $stmt = $this->db->prepare("INSERT INTO brands (id, name, brand_cloudinary_public_id) VALUES (:id, :name, :brand_cloudinary_public_id)");
 
             $stmt->bindParam(':id', $newId, PDO::PARAM_STR);
             $stmt->bindParam(':name', $data['name'], PDO::PARAM_STR);
-            $stmt->bindValue(':category_cloudinary_public_id', $data['category_cloudinary_public_id'], PDO::PARAM_STR);
+            $stmt->bindParam(':brand_cloudinary_public_id', $data['brand_cloudinary_public_id'], PDO::PARAM_STR);
 
-            if ($stmt->execute()) {
-                return $newId;
-            } else {
-                throw new RuntimeException("Failed to create category.");
+            if (!$stmt->execute()) {
+                throw new DuplicateEntryException("Brand with name '{$data['name']}' already exists.");
             }
+
+            return $newId;
+        } catch (DuplicateEntryException $e) {
+            throw new DuplicateEntryException($e->getMessage());
         } catch (PDOException $e) {
-            if ($e->getCode() === '23000') { // Duplicate entry error code
-                throw new DuplicateEntryException("Category with this name already exists.");
-            }
             error_log($e->getMessage());
-            throw new RuntimeException("Database error: " . $e->getMessage());
+            throw new RuntimeException("Failed to create brand: " . $e->getMessage());
         }
     }
 
     public function delete(string $id): bool
     {
         try {
-            $stmt = $this->db->prepare("DELETE FROM categories WHERE id = :id");
-            $stmt->bindParam(':id', $id, PDO::PARAM_STR);
+            $stmt = $this->db->prepare("DELETE FROM brands WHERE id = :id");
+            $stmt->bindParam(':id', $id);
             return $stmt->execute();
         } catch (PDOException $e) {
             error_log($e->getMessage());

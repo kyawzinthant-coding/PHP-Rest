@@ -53,7 +53,6 @@ try {
     CREATE TABLE IF NOT EXISTS `Brands` (
         `id` CHAR(36) PRIMARY KEY,
         `name` VARCHAR(255) NOT NULL UNIQUE,
-        `description` TEXT,
         `brand_cloudinary_public_id` VARCHAR(255),
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

@@ -40,14 +40,14 @@ class ProductController
             $products = $this->productRepository->GetALlProduct();
 
             if (empty($products)) {
-                http_response_code(404);
+                http_response_code(200);
                 echo json_encode([
                     'status' => 'error',
                     'message' => 'No products found.'
                 ]);
                 return;
             }
-            $transformedProducts = ImageUrlHelper::transformItemsWithImageUrls($products);
+            $transformedProducts = ImageUrlHelper::transformItemsWithImageUrls($products, 'cloudinary_public_id', 'image_url');
 
             echo json_encode([
                 'status' => 'success',

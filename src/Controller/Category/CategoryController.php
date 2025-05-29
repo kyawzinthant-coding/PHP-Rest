@@ -9,9 +9,7 @@ use Exception;
 use RuntimeException;
 use App\Repository\DuplicateEntryException;
 use App\Utils\ImageUrlHelper;
-use App\Service\ProductImageService;
 use App\Service\CloudinaryImageUploader;
-use App\Core\Controller;
 
 class CategoryController
 {
@@ -36,22 +34,21 @@ class CategoryController
         }
     }
 
-
-
     public function index(): void
     {
         try {
+            /*************  ✨ Windsurf Command 🌟  *************/
             $categories = $this->categoryRepository->getAllCategories();
 
             if (empty($categories)) {
-                http_response_code(404);
+                http_response_code(200);
                 echo json_encode([
                     'status' => 'error',
                     'message' => 'No categories found.'
                 ]);
                 return;
             }
-            $transformedCategory = ImageUrlHelper::transformItemsWithImageUrls($categories);
+            $transformedCategory = ImageUrlHelper::transformItemsWithImageUrls($categories, 'category_cloudinary_public_id', 'image_url');
 
             echo json_encode([
                 'status' => 'success',
@@ -66,6 +63,7 @@ class CategoryController
 
     public function show(string $id): ?array
     {
+        /*******  5760bb32-7f69-4b0d-8022-6d76bacdb131  *******/
         return $this->categoryRepository->findById($id);
     }
 
@@ -96,11 +94,9 @@ class CategoryController
                 'category_cloudinary_public_id' => $cloudinaryPublicId,
             ];
 
-            echo json_encode($categoryDataForRepo);
 
             $newCategoryID =  $this->categoryRepository->create($categoryDataForRepo);
 
-            echo json_encode($newCategoryID);
 
             if ($newCategoryID) {
                 $response = [
@@ -119,10 +115,13 @@ class CategoryController
                 throw new RuntimeException('Failed to create category in the database.');
             }
         } catch (ValidationException $e) {
+            $this->cleanupOrphanedImage($cloudinaryPublicId, "after duplicate entry during store");
             throw new RuntimeException("Validation failed: " . implode(", ", $e->getErrors()));
         } catch (DuplicateEntryException $e) {
+            $this->cleanupOrphanedImage($cloudinaryPublicId, "after duplicate entry during store");
             throw new RuntimeException("Category already exists: " . $e->getMessage());
         } catch (Exception $e) {
+            $this->cleanupOrphanedImage($cloudinaryPublicId, "after duplicate entry during store");
             throw new RuntimeException("Failed to create category: " . $e->getMessage());
         }
     }
@@ -142,9 +141,9 @@ class CategoryController
 
             if ($category['category_cloudinary_public_id']) {
                 try {
-                    $this->imageUploader->deleteImage($category['cloudinary_public_id']);
+                    $this->imageUploader->deleteImage($category['category_cloudinary_public_id']);
                 } catch (Exception $e) {
-                    error_log("Failed to delete Cloudinary image {$category['cloudinary_public_id']} during product deletion: " . $e->getMessage());
+                    error_log("Failed to delete Cloudinary image {$category['category_cloudinary_public_id']} during product deletion: " . $e->getMessage());
                 }
             }
 

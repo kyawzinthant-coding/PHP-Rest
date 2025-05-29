@@ -12,6 +12,7 @@ use App\Core\Router;
 use App\Controller\Product\ProductController;
 use App\Exception\ValidationException;
 use App\Middleware\AuthMiddleware;
+use App\Controller\Brand\BrandController;
 use App\Repository\DuplicateEntryException;
 
 header('Access-Control-Allow-Origin:  http://localhost:5173 '); // Allow all origins for CORS (change this in production)
@@ -44,6 +45,7 @@ $router->post('/api/v1/products/{id}', [ProductController::class, 'update']);
 $router->delete('/api/v1/products/{id}', [ProductController::class, 'destroy']);
 
 
+// Auth routes
 $router->post('/api/v1/auth/register', [AuthController::class, 'register']);
 $router->post('/api/v1/auth/login', [AuthController::class, 'login']);
 $router->post('/api/v1/auth/logout', [AuthController::class, 'logout']); // Add logout route
@@ -51,11 +53,17 @@ $router->post('/api/v1/auth/logout', [AuthController::class, 'logout']); // Add 
 // Route to get current user info (requires authentication)
 $router->get('/api/v1/auth/me', [AuthController::class, 'getCurrentUser'], [AuthMiddleware::class]);
 
-
+// Category routes
 $router->get('/api/v1/category', [CategoryController::class, 'index']);
 $router->post('/api/v1/category', [CategoryController::class, 'create']);
 $router->delete('/api/v1/category/{id}', [CategoryController::class, 'delete']);
 // $router->get('/api/v1/category', [CategoryController::class, 'index']);
+
+
+// Brand routes
+$router->get('/api/v1/brand', [BrandController::class, 'index']);
+$router->post('/api/v1/brand', [BrandController::class, 'create']);
+$router->delete('/api/v1/brand/{id}', [BrandController::class, 'delete']);
 
 $requestUri = $_SERVER['REQUEST_URI'];
 $requestMethod = $_SERVER['REQUEST_METHOD'];

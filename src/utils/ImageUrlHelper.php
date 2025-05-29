@@ -15,14 +15,18 @@ class ImageUrlHelper
      * @return string|null The full secure image URL, or null if no public ID or if CLOUDINARY_CLOUD_NAME is not defined.
      */
     public static function generateUrl(?string $publicId): ?string
+
     {
         if (!defined('CLOUDINARY_CLOUD_NAME')) {
             error_log("CLOUDINARY_CLOUD_NAME is not defined. Image URL cannot be generated.");
             return null;
         }
 
+
+
         if (!empty($publicId)) {
             // Using .webp extension for potentially better compression and modern browser support
+
             return "https://res.cloudinary.com/" . CLOUDINARY_CLOUD_NAME . "/image/upload/" . $publicId . ".webp";
         }
         return null;
@@ -38,14 +42,14 @@ class ImageUrlHelper
      * @param string $imageUrlKey The key to assign the generated image URL to (e.g., 'image_url').
      * @return array Transformed items with the image URL added.
      */
-    public static function transformItemsWithImageUrls(array $items, string $publicIdKey = 'cloudinary_public_id', string $imageUrlKey = 'image_url'): array
+    public static function transformItemsWithImageUrls(array $items, string $publicId,  string $publicIdKey = 'cloudinary_public_id', string $imageUrlKey = 'image_url'): array
     {
+
         if (!is_array($items)) {
             return [];
         }
-
-        return array_map(function ($item) use ($publicIdKey, $imageUrlKey) {
-            $publicId = $item[$publicIdKey] ?? null;
+        return array_map(function ($item) use ($publicId, $imageUrlKey) {
+            $publicId = $item[$publicId] ?? null;
             $item[$imageUrlKey] = self::generateUrl($publicId);
             return $item;
         }, $items);
