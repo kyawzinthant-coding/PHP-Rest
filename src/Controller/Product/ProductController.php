@@ -2,6 +2,7 @@
 
 namespace App\Controller\Product;
 
+use App\Core\Request;
 use App\Repository\Product\ProductRepository;
 use App\Service\CloudinaryImageUploader;
 use App\Validate\ProductValidate; // Import the validation class
@@ -35,30 +36,62 @@ class ProductController
         }
     }
 
-    public function index(): void
+    public function index(Request $request): void // Expect the Request object
     {
         try {
-            $products = $this->productRepository->GetALlProduct();
+            $filters = [];
+            // Get filter parameters from the query string
+            // Ensure you validate or sanitize these IDs if necessary
+            if (!empty($request->get['categoryId'])) {
+                $filters['categoryId'] = $request->get['categoryId'];
+            }
+            if (!empty($request->get['brandId'])) {
+                $filters['brandId'] = $request->get['brandId'];
+            }
+            // Add more filters from $request->get as needed
+            // if (!empty($request->get['isActive'])) {
+            //     $filters['isActive'] = filter_var($request->get['isActive'], FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+            // }
 
+
+            $products = $this->productRepository->GetALlProduct($filters); // Use the new repository method
+
+            // Your response for empty products was a 200 with status "error"
+            // It's generally better to return 200 with status "success" and an empty data array.
             if (empty($products)) {
                 http_response_code(200);
                 echo json_encode([
-                    'status' => 'error',
-                    'message' => 'No products found.'
+                    'status' => 'success', // Changed from 'error'
+                    'message' => 'No products found matching the criteria.',
+                    'length' => 0,
+                    'data' => []
                 ]);
                 return;
             }
+
             $transformedProducts = ImageUrlHelper::transformItemsWithImageUrls($products, 'cloudinary_public_id', 'image_url');
 
             echo json_encode([
                 'status' => 'success',
-                'message' => 'Product list retrieved successfully',
+                'message' => 'Product list retrieved successfully.',
                 'length' => count($transformedProducts),
                 'data' => $transformedProducts
             ]);
             http_response_code(200);
-        } catch (Exception $e) {
-            throw $e; // Let index.php handle
+        } catch (RuntimeException $e) { // Catch specific runtime exceptions from repo
+            error_log("Controller Error in ProductController::index: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'status' => 'error',
+                'message' => $e->getMessage() // Or a generic "Failed to retrieve products"
+            ]);
+        } catch (Exception $e) { // Catch any other general exceptions
+            error_log("Controller Error in ProductController::index: " . $e->getMessage());
+            http_response_code(500); // Internal Server Error
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'An unexpected error occurred while retrieving products.'
+            ]);
         }
     }
 
@@ -123,7 +156,7 @@ class ProductController
             $product = $this->productRepository->findById($id);
 
             if (!$product) {
-                http_response_code(404);
+                http_response_code(200);
                 echo json_encode([
                     'status' => 'error',
                     'message' => 'Product not found.'
@@ -228,12 +261,6 @@ class ProductController
         }
     }
 
-    /*************  ✨ Windsurf Command ⭐  *************/
-    /**
-     * Delete a product by ID.
-     * @param string $id The product ID from the URL (now a UUID string).
-     * @throws RuntimeException If the product deletion failed in the database after existence check.
-     */
     public function destroy(string $id): void
     {
         try {

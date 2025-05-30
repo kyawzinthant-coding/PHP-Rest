@@ -20,12 +20,46 @@ class ProductRepository
     }
 
 
-    public function GetALlProduct(): array
+    public function GetALlProduct(array $filters = []): array
     {
         try {
-            $stmt = $this->db->prepare("SELECT * FROM products ORDER BY created_at DESC");
-            $stmt->execute();
-            return $stmt->fetchAll();
+            $sql = "SELECT * FROM products";
+            $whereClauses = [];
+            $bindings = [];
+
+            if (!empty($filters['categoryId'])) {
+                $whereClauses[] = "category_id = :categoryId";
+                $bindings[':categoryId'] = $filters['categoryId'];
+            }
+
+            if (!empty($filters['brandId'])) {
+                $whereClauses[] = "brand_id = :brandId";
+                $bindings[':brandId'] = $filters['brandId'];
+            }
+            if (!empty($filters['isActive'])) {
+                $whereClauses[] = "is_active = :isActive";
+                $bindings[':isActive'] = $filters['isActive'] ? 1 : 0;
+            }
+
+            if (!empty($whereClauses)) {
+                $sql .= " WHERE " . implode(" AND ", $whereClauses);
+            }
+
+            $sql .= " ORDER BY created_at DESC";
+
+            try {
+                $stmt = $this->db->prepare($sql);
+                // Bind all values
+                foreach ($bindings as $placeholder => $value) {
+                    // You might need to determine PDO::PARAM_ type if not all are strings
+                    $stmt->bindValue($placeholder, $value);
+                }
+                $stmt->execute();
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                error_log("ProductRepository::findAll Error: " . $e->getMessage() . " SQL: " . $sql);
+                throw new RuntimeException("Could not retrieve products from database: " . $e->getMessage(), 0, $e);
+            }
         } catch (PDOException $e) {
             error_log($e->getMessage());
             return [];
@@ -49,14 +83,9 @@ class ProductRepository
     }
 
 
-
     public function create(array $data): string
     {
         try {
-
-            // Generate a new UUID for the product ID
-
-            // echo "Creating product with data: " . json_encode($data) . "\n"; // Debugging line
 
             $newId = Uuid::uuid4()->toString();
 

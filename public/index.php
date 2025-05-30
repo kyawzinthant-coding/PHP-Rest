@@ -43,6 +43,7 @@ $router->post('/api/v1/products', [ProductController::class, 'store']);
 $router->get('/api/v1/products/{id}', [ProductController::class, 'GetProductById']);
 $router->post('/api/v1/products/{id}', [ProductController::class, 'update']);
 $router->delete('/api/v1/products/{id}', [ProductController::class, 'destroy']);
+$router->get('/api/v1/products/categoryId/{id}', [ProductController::class, 'getProductsByCategoryId']);
 
 
 // Auth routes
