@@ -50,8 +50,6 @@ class BrandController
             }
             $transformedBrands = ImageUrlHelper::transformItemsWithImageUrls($brands, 'brand_cloudinary_public_id', 'image_url');
 
-
-
             echo json_encode([
                 'status' => 'success',
                 'message' => 'Brand list retrieved successfully',

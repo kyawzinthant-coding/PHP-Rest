@@ -26,8 +26,14 @@ class ProductImageService
         if (!in_array($imageFile['type'], $allowedTypes)) {
             throw new Exception('Invalid image file type. Only JPEG, PNG, GIF, and WEBP are allowed.');
         }
-        return $this->uploader->uploadImage($imageFile['tmp_name'], 'products/');
+        $result = $this->uploader->uploadImage($imageFile['tmp_name'], 'products/');
+        if (!isset($result['public_id'])) {
+            throw new Exception('Failed to retrieve public ID from upload result.');
+        }
+        return $result['public_id'];
     }
+
+
 
     public function delete(?string $publicId): void
     {

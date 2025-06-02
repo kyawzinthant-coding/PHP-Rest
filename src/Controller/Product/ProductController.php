@@ -77,7 +77,6 @@ class ProductController
                 'length' => count($transformedProducts),
                 'data' => $transformedProducts
             ]);
-            http_response_code(200);
         } catch (RuntimeException $e) { // Catch specific runtime exceptions from repo
             error_log("Controller Error in ProductController::index: " . $e->getMessage());
             http_response_code(500);

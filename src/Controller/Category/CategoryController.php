@@ -40,15 +40,19 @@ class CategoryController
             /*************  ✨ Windsurf Command 🌟  *************/
             $categories = $this->categoryRepository->getAllCategories();
 
+
             if (empty($categories)) {
                 http_response_code(200);
                 echo json_encode([
                     'status' => 'error',
-                    'message' => 'No categories found.'
+                    'message' => 'No categories found.',
+                    'data' => [],
                 ]);
                 return;
             }
             $transformedCategory = ImageUrlHelper::transformItemsWithImageUrls($categories, 'category_cloudinary_public_id', 'image_url');
+
+
 
             echo json_encode([
                 'status' => 'success',
@@ -89,15 +93,21 @@ class CategoryController
                 }
             }
 
-            $categoryDataForRepo = array_merge(
-                ['id' => null, 'category_cloudinary_public_id' => $cloudinaryPublicId],
-                $validatedData
-            );
+
+
+            $CategoryDataForRepo = [
+                'name' => $validatedData['name'],
+                'category_cloudinary_public_id' => $cloudinaryPublicId,
+            ];
+
+            echo json_decode("cloudinary_id", $cloudinaryPublicId);
+
+            // echo json_encode($categoryDataForRepo);
 
 
 
 
-            $newCategoryID =  $this->categoryRepository->create($categoryDataForRepo);
+            $newCategoryID =  $this->categoryRepository->create($CategoryDataForRepo);
 
 
             if ($newCategoryID) {

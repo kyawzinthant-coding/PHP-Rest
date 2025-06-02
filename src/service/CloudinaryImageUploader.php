@@ -27,21 +27,11 @@ class CloudinaryImageUploader
 
         $this->cloudinary = new Cloudinary($config);
     }
-
-    /**
-     * Uploads an image file to Cloudinary.
-     * @param string $filePath The temporary path to the uploaded file on the server.
-     * @param string $publicIdPrefix A prefix for the public ID (e.g., 'products/').
-     * @return string The URL of the uploaded image.
-     * @throws Exception If the upload fails.
-     */
     public function uploadImage(string $filePath, string $publicIdPrefix = ''): array
     {
         // This method handles sending an image from your server's temporary location to Cloudinary.
 
         try {
-
-
             $uploadResult = $this->cloudinary->uploadApi()->upload($filePath, [
                 'folder' => $publicIdPrefix . 'ecommerce_products', // Organize images in a specific folder
                 'use_filename' => true, // Use original filename as part of public ID

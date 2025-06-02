@@ -20,24 +20,46 @@ class ProductRepository
     }
 
 
-    public function GetALlProduct(array $filters = []): array
+    public function GetAllProduct(array $filters = []): array
     {
         try {
-            $sql = "SELECT * FROM products";
+            $sql = "
+                SELECT 
+                    p.id,
+                    p.name,
+                    p.description,
+                    p.size_ml,
+                    p.price,
+                    p.cloudinary_public_id,
+                    p.stock_quantity,
+                    p.top_notes,
+                    p.middle_notes,
+                    p.base_notes,
+                    p.gender_affinity,
+                    p.is_active,
+                    p.created_at,
+                    b.name AS brand_name,
+                    c.name AS category_name
+                FROM products p
+                LEFT JOIN brands b ON p.brand_id = b.id
+                LEFT JOIN categories c ON p.category_id = c.id
+            ";
+
             $whereClauses = [];
             $bindings = [];
 
             if (!empty($filters['categoryId'])) {
-                $whereClauses[] = "category_id = :categoryId";
+                $whereClauses[] = "p.category_id = :categoryId";
                 $bindings[':categoryId'] = $filters['categoryId'];
             }
 
             if (!empty($filters['brandId'])) {
-                $whereClauses[] = "brand_id = :brandId";
+                $whereClauses[] = "p.brand_id = :brandId";
                 $bindings[':brandId'] = $filters['brandId'];
             }
-            if (!empty($filters['isActive'])) {
-                $whereClauses[] = "is_active = :isActive";
+
+            if (isset($filters['isActive'])) {
+                $whereClauses[] = "p.is_active = :isActive";
                 $bindings[':isActive'] = $filters['isActive'] ? 1 : 0;
             }
 
@@ -45,15 +67,15 @@ class ProductRepository
                 $sql .= " WHERE " . implode(" AND ", $whereClauses);
             }
 
-            $sql .= " ORDER BY created_at DESC";
+            $sql .= " ORDER BY p.created_at DESC";
 
             try {
                 $stmt = $this->db->prepare($sql);
-                // Bind all values
+
                 foreach ($bindings as $placeholder => $value) {
-                    // You might need to determine PDO::PARAM_ type if not all are strings
                     $stmt->bindValue($placeholder, $value);
                 }
+
                 $stmt->execute();
                 return $stmt->fetchAll(PDO::FETCH_ASSOC);
             } catch (PDOException $e) {
@@ -65,6 +87,7 @@ class ProductRepository
             return [];
         }
     }
+
 
     public function findById(string $id): ?array
     {

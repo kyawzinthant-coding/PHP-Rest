@@ -143,7 +143,7 @@ class AuthController
         // If you need more details from the DB (that are not in the JWT):
         $fullUserDetails = $this->userRepository->findById($authenticatedUserData->id);
         if (!$fullUserDetails) {
-            http_response_code(404);
+            http_response_code(401);
             echo json_encode(['status' => 'error', 'message' => 'User not found in database.']);
             return;
         }

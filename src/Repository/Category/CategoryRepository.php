@@ -51,7 +51,7 @@ class CategoryRepository
     {
         try {
 
-
+            echo $data['category_cloudinary_public_id'];
             $newId = Uuid::uuid4()->toString();
             $stmt = $this->db->prepare("INSERT INTO categories (id, name,category_cloudinary_public_id) VALUES (:id, :name,:category_cloudinary_public_id)");
 
