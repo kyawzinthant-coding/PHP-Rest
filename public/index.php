@@ -66,6 +66,9 @@ $router->get('/api/v1/brand', [BrandController::class, 'index']);
 $router->post('/api/v1/brand', [BrandController::class, 'create']);
 $router->delete('/api/v1/brand/{id}', [BrandController::class, 'delete']);
 
+
+$router->get('/api/v1/filter-type', [ProductController::class, 'getCategoryAndBrand']);
+
 $requestUri = $_SERVER['REQUEST_URI'];
 $requestMethod = $_SERVER['REQUEST_METHOD'];
 

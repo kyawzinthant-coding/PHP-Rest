@@ -4,6 +4,8 @@ namespace App\Controller\Product;
 
 use App\Core\Request;
 use App\Repository\Product\ProductRepository;
+use App\Repository\Category\CategoryRepository;
+use App\Repository\Brand\BrandRepository;
 use App\Service\CloudinaryImageUploader;
 use App\Validate\ProductValidate; // Import the validation class
 use App\Exception\ValidationException; // Import for type hinting if needed, or if you catch it specifically
@@ -13,16 +15,23 @@ use App\Repository\DuplicateEntryException;
 use App\Utils\ImageUrlHelper;
 use App\utils\Tools;
 
+
+
 class ProductController
 {
     private ProductRepository $productRepository;
+    private CategoryRepository $categoryRepository;
+    private BrandRepository $brandRepository;
     private CloudinaryImageUploader $imageUploader;
 
     public function __construct()
     {
         $this->productRepository = new ProductRepository();
+        $this->categoryRepository = new CategoryRepository();
+        $this->brandRepository = new BrandRepository();
         $this->imageUploader = new CloudinaryImageUploader();
     }
+
 
     private function cleanupOrphanedImage(?string $publicId, string $context): void
     {
@@ -35,6 +44,32 @@ class ProductController
             }
         }
     }
+    public function getCategoryAndBrand(): void
+    {
+        $categories = $this->categoryRepository->getAllCategories();
+        $brands = $this->brandRepository->getAllBrands();
+
+        $categoryAndBrand = [
+            'categories' => array_map(function ($category) {
+                return [
+                    'id' => $category['id'],
+                    'name' => $category['name']
+                ];
+            }, $categories),
+            'brands' => array_map(function ($brand) {
+                return [
+                    'id' => $brand['id'],
+                    'name' => $brand['name']
+                ];
+            }, $brands),
+        ];
+
+        header('Content-Type: application/json');
+        echo json_encode($categoryAndBrand);
+    }
+
+
+
 
     public function index(Request $request): void // Expect the Request object
     {
