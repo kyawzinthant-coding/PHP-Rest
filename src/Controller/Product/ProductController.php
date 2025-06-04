@@ -129,13 +129,13 @@ class ProductController
         }
     }
 
-    public function store(): void
+    public function store(Request $request): void
     {
         $cloudinaryPublicId = null;
         $displayedImageUrl = null;
 
         try {
-            $validator = new ProductValidate();
+            $validator = new ProductValidate($request);
             $validatedData = $validator->validate(); // isUpdate = false by default
 
             $imageFile = $validatedData['image_file']; // Get validated image file info
@@ -151,8 +151,6 @@ class ProductController
                 }
             }
 
-
-
             $tools = new Tools();
             $productDataForRepo = array_merge(
                 ['cloudinary_public_id' => $cloudinaryPublicId],
@@ -160,6 +158,8 @@ class ProductController
 
                 $validatedData
             );
+
+            echo json_encode($productDataForRepo);
 
             $newProductId = $this->productRepository->create($productDataForRepo);
             echo json_encode([
@@ -211,10 +211,19 @@ class ProductController
         }
     }
 
-    public function update(string $id): void
+    public function update(Request $request, string $id): void
     {
+
+
         $newCloudinaryPublicId = null;
         $oldCloudinaryPublicId = null;
+
+
+
+        $input = file_get_contents('php://input');
+        $json_data = json_decode($input, true);
+
+        echo $json_data;
 
         try {
             $existingProduct = $this->productRepository->findById($id);
@@ -226,9 +235,9 @@ class ProductController
             $oldCloudinaryPublicId = $existingProduct['cloudinary_public_id'];
 
             // Use ProductValidate for update
-            $validator = new ProductValidate();
+            $validator = new ProductValidate($request);
             // The validate method will throw ValidationException if validation fails
-            $validatedData = $validator->validate(true); // Pass true for isUpdate
+            $validatedData = $validator->validateUpdate(true); // Pass true for isUpdate
 
 
 

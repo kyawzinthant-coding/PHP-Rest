@@ -10,6 +10,8 @@ use Ramsey\Uuid\Uuid;
 
 
 use App\Repository\DuplicateEntryException; // Make sure to include this line
+use Error;
+
 class ProductRepository
 {
     private PDO $db;
@@ -110,6 +112,8 @@ class ProductRepository
     {
         try {
 
+
+
             $newId = Uuid::uuid4()->toString();
 
             $stmt = $this->db->prepare("
@@ -149,7 +153,7 @@ class ProductRepository
             return $newId;
         } catch (PDOException $e) {
             if ($e->getCode() === '23000') {
-                throw new DuplicateEntryException("Product with this name already exists.");
+                throw new Error($e->getMessage());
             }
             throw new RuntimeException("Could not create product in database: " . $e->getMessage());
         }

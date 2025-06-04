@@ -6,8 +6,6 @@ use App\Core\Request; // If you refactored BaseRequest to use it
 
 class AuthValidation extends BaseRequest
 {
-
-
     public function validate(bool $isUpdate = false): array
     {
         if ($isUpdate) {
@@ -16,7 +14,6 @@ class AuthValidation extends BaseRequest
             return $this->validateLogin();
         }
     }
-
     public function validateRegistration(): array
     {
 
@@ -42,8 +39,6 @@ class AuthValidation extends BaseRequest
         } elseif (strlen($password) < 8) {
             $this->addError('password', 'Password must be at least 8 characters long.');
         }
-
-
 
         $this->throwValidationException(); // Throws exception if errors exist
 
