@@ -58,7 +58,7 @@ $router->get('/api/v1/auth/me', [AuthController::class, 'getCurrentUser'], [Auth
 $router->get('/api/v1/category', [CategoryController::class, 'index'], [AuthMiddleware::class]);
 $router->post('/api/v1/category', [CategoryController::class, 'create']);
 $router->delete('/api/v1/category/{id}', [CategoryController::class, 'delete']);
-// $router->get('/api/v1/category', [CategoryController::class, 'index']);
+$router->post('/api/v1/category/{id}', [CategoryController::class, 'update']);
 
 
 // Brand routes

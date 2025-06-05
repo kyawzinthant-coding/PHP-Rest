@@ -127,7 +127,6 @@ class BrandController
     public function update(Request $request, string $id): void
     {
         $newlyUploadedCloudinaryPublicId = null; // To track if a new image was uploaded in this request
-        $oldImageToDeleteOnSuccess = null;
 
         try {
             $brand = $this->brandRepository->findById($id);
@@ -139,8 +138,6 @@ class BrandController
                 ]);
                 return;
             }
-
-            $originalCloudinaryPublicId = $brand['brand_cloudinary_public_id'];
 
 
             $validator = new BrandValidation($request);
