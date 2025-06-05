@@ -81,7 +81,7 @@ try {
         `brand_id` CHAR(36) NOT NULL,
         `category_id` CHAR(36) NOT NULL,
         `size_ml` INT NOT NULL,
-        `price` DECIMAL(10, 2) NOT NULL,
+        `price` INT NOT NULL,
         `slug` VARCHAR(255), -- Consider adding UNIQUE NOT NULL if used for routing
         `cloudinary_public_id` VARCHAR(255),
         `stock_quantity` INT NOT NULL DEFAULT 0,

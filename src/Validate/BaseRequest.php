@@ -123,6 +123,7 @@ abstract class BaseRequest
         }
 
         if ($file['size'] > $maxSize) {
+            echo $maxSize;
             $this->addError($fieldName, 'Image file size exceeds ' . ($maxSize / (1024 * 1024)) . 'MB limit.');
             return false;
         }

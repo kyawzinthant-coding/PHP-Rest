@@ -167,54 +167,79 @@ class ProductRepository
      */
     public function update(string $id, array $data): bool
     {
+        if (empty($data)) {
+            return false; // No data provided to update
+        }
+
+        $updateFields = [];
+        $bindings = [];
+
+        // Define all updatable fields and their PDO types from your Products schema
+        $fieldMap = [
+            'name' => PDO::PARAM_STR,
+            'description' => PDO::PARAM_STR,
+            'brand_id' => PDO::PARAM_STR,    // Assuming UUID string, FK
+            'category_id' => PDO::PARAM_STR, // Assuming UUID string, FK
+            'size_ml' => PDO::PARAM_INT,
+            'price' => PDO::PARAM_STR,       // DECIMAL in DB, send as string for PDO
+            'slug' => PDO::PARAM_STR,
+            'cloudinary_public_id' => PDO::PARAM_STR, // Can be null
+            'stock_quantity' => PDO::PARAM_INT,
+            'top_notes' => PDO::PARAM_STR,    // TEXT, can be null
+            'middle_notes' => PDO::PARAM_STR, // TEXT, can be null
+            'base_notes' => PDO::PARAM_STR,   // TEXT, can be null
+            'gender_affinity' => PDO::PARAM_STR,
+            'is_active' => PDO::PARAM_INT,   // Storing boolean as 0 or 1
+        ];
+
+        foreach ($fieldMap as $field => $pdoType) {
+            if (array_key_exists($field, $data)) { // Check if the field was actually sent for update
+                $updateFields[] = "`{$field}` = :{$field}";
+                $valueToBind = $data[$field];
+                if ($field === 'is_active') { // Convert boolean to int for DB
+                    $valueToBind = (int)(bool)$data[$field];
+                }
+                // If a field like cloudinary_public_id is explicitly set to null
+                if ($valueToBind === null && ($field === 'cloudinary_public_id' || $field === 'top_notes' || $field === 'middle_notes' || $field === 'base_notes')) {
+                    $bindings[":{$field}"] = [null, PDO::PARAM_NULL];
+                } else {
+                    $bindings[":{$field}"] = [$valueToBind, $pdoType];
+                }
+            }
+        }
+
+        if (empty($updateFields)) {
+            return false; // No valid fields to update based on $fieldMap
+        }
+
+        // Add updated_at manually for every update
+        $updateFields[] = "`updated_at` = CURRENT_TIMESTAMP";
+
+        $sql = "UPDATE `Products` SET " . implode(', ', $updateFields) . " WHERE `id` = :id";
+
         try {
-            $updateFields = [];
-            $bindValues = []; // Use this array for values to bind
-
-            if (isset($data['name'])) {
-                $updateFields[] = 'name = :name';
-                $bindValues[':name'] = [$data['name'], PDO::PARAM_STR]; // Store value and type
-            }
-            if (isset($data['description'])) {
-                $updateFields[] = 'description = :description';
-                $bindValues[':description'] = [$data['description'], PDO::PARAM_STR];
-            }
-            if (isset($data['price'])) {
-                $updateFields[] = 'price = :price';
-                $bindValues[':price'] = [$data['price'], PDO::PARAM_STR];
-            }
-            if (array_key_exists('cloudinary_public_id', $data)) {
-                $updateFields[] = 'cloudinary_public_id = :cloudinary_public_id';
-                $bindValues[':cloudinary_public_id'] = [$data['cloudinary_public_id'], PDO::PARAM_STR];
-            }
-
-
-            if (empty($updateFields)) {
-                return false;
-            }
-
-
-            $sql = "UPDATE products SET " . implode(', ', $updateFields) . " WHERE id = :id";
             $stmt = $this->db->prepare($sql);
-
-            // Bind the ID parameter separately as it's always there
             $stmt->bindValue(':id', $id, PDO::PARAM_STR);
 
-            // Now loop through other parameters and bind their values
-            foreach ($bindValues as $paramName => $value) {
-                // $value is now always an array [value, type]
-                $stmt->bindValue($paramName, $value[0], $value[1]);
+            foreach ($bindings as $placeholder => $valueAndType) {
+                $stmt->bindValue($placeholder, $valueAndType[0], $valueAndType[1]);
             }
 
-            // --- REMOVE dd($bindParams); from here now that we've switched ---
-
             $stmt->execute();
-            return $stmt->rowCount() > 0;
+            return $stmt->rowCount() > 0; // True if any row was affected
         } catch (PDOException $e) {
-            error_log("Error in ProductRepository::update: " . $e->getMessage());
-            throw new RuntimeException("Could not update product in database: " . $e->getMessage());
+            error_log("ProductRepository::update Error for ID {$id}: " . $e->getMessage() . "\nSQL: " . $sql . "\nData: " . json_encode($data));
+            if ($e->getCode() === '23000') { // Integrity constraint violation
+                // More specific check if possible, e.g., for unique slug or name
+                if (strpos(strtolower($e->getMessage()), 'duplicate entry') !== false && (strpos(strtolower($e->getMessage()), 'slug') !== false || strpos(strtolower($e->getMessage()), 'name') !== false)) {
+                    throw new DuplicateEntryException("Update failed. The product name or slug conflicts with an existing product.");
+                }
+                throw new DuplicateEntryException("Update failed due to a data conflict (e.g., unique constraint).");
+            }
+            throw new RuntimeException("Could not update product (ID: {$id}) in database: " . $e->getMessage(), 0, $e);
         }
     }
+
 
     public function delete(string $id): bool
     {
