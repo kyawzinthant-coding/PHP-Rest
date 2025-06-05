@@ -64,6 +64,7 @@ $router->delete('/api/v1/category/{id}', [CategoryController::class, 'delete']);
 // Brand routes
 $router->get('/api/v1/brand', [BrandController::class, 'index']);
 $router->post('/api/v1/brand', [BrandController::class, 'create']);
+$router->post('/api/v1/brand/{id}', [BrandController::class, 'update']);
 $router->delete('/api/v1/brand/{id}', [BrandController::class, 'delete']);
 
 

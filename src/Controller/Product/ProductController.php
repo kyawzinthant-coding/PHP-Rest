@@ -83,11 +83,6 @@ class ProductController
             if (!empty($request->get['brandId'])) {
                 $filters['brandId'] = $request->get['brandId'];
             }
-            // Add more filters from $request->get as needed
-            // if (!empty($request->get['isActive'])) {
-            //     $filters['isActive'] = filter_var($request->get['isActive'], FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-            // }
-
 
             $products = $this->productRepository->GetALlProduct($filters); // Use the new repository method
 
@@ -132,20 +127,18 @@ class ProductController
     public function store(Request $request): void
     {
         $cloudinaryPublicId = null;
-        $displayedImageUrl = null;
 
         try {
             $validator = new ProductValidate($request);
-            $validatedData = $validator->validateCreate(); // isUpdate = false by default
+            $validatedData = $validator->validateCreate();
 
-            $imageFile = $validatedData['product_image']; // Get validated image file info
+            $imageFile = $validatedData['product_image'];
 
 
 
             if ($imageFile) {
                 try {
                     $uploadResult = $this->imageUploader->uploadImage($imageFile['tmp_name'], 'products/');
-                    $displayedImageUrl = $uploadResult['secure_url'];
                     $cloudinaryPublicId = $uploadResult['public_id'];
                 } catch (Exception $e) {
                     // No need to cleanup orphaned image here, as it wasn't associated with a DB record yet
@@ -219,7 +212,6 @@ class ProductController
         $tools = new Tools();
         try {
             $existingProduct = $this->productRepository->findById($id);
-            echo json_encode($existingProduct);
             if (!$existingProduct) {
                 http_response_code(404);
                 echo json_encode(['status' => 'error', 'message' => 'Product not found for update.']);
@@ -229,7 +221,7 @@ class ProductController
 
             // Validate only the fields present in the request for an update
             $validator = new ProductValidate($request);
-            $validatedData = $validator->validateUpdate(); // This now returns only submitted & validated fields
+            $validatedData = $validator->validateUpdate();
 
             $productDataForRepo = $validatedData; // Start with validated data
 

@@ -25,7 +25,6 @@ class ProductValidate extends BaseRequest // Ensure BaseRequest provides error h
         parent::__construct(); // Initializes $this->errors
         $this->request = $request;
         $this->dataToValidate = $this->request->post; // Assumes body data
-        // Use 'product_image' as the key for the file input from the form
         $this->imageFileToValidate = $this->request->files['product_image'] ?? null;
     }
 
@@ -277,13 +276,4 @@ class ProductValidate extends BaseRequest // Ensure BaseRequest provides error h
             throw new ValidationException('Validation failed.', 400, $this->getErrors());
         }
     }
-
-    // Make sure these methods (or equivalents) are in your BaseRequest.php:
-    // abstract class BaseRequest {
-    //     protected array $errors = [];
-    //     protected function addError(string $field, string $message): void { $this->errors[$field][] = $message; }
-    //     public function hasErrors(): bool { return !empty($this->errors); }
-    //     public function getErrors(): array { return $this->errors; }
-    //     protected function validateImageFile(?array $file, string $fieldName, array $allowedTypes, int $maxSize): bool { ... }
-    // }
 }
