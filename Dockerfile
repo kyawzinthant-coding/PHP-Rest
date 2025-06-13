@@ -1,15 +1,17 @@
-
+# Use an official PHP image with the Apache web server
 FROM php:8.2-apache
 
-
+# Install system dependencies and necessary PHP extensions.
+# ADDED libonig-dev HERE to fix the build error.
 RUN apt-get update && apt-get install -y \
     libzip-dev \
     unzip \
+    libonig-dev \
     && docker-php-ext-install pdo_mysql mbstring xml intl zip
 
-# Set the web server's root directory to your project's `public` folder.
+# Set the web server's root directory to your project's 'public' folder.
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/w ww/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
 # Enable Apache's mod_rewrite for your API's friendly URLs.
@@ -25,8 +27,7 @@ WORKDIR /var/www/html
 COPY . .
 
 # Run Composer to install all dependencies from your composer.json file.
-# This is the step that recreates the 'vendor' directory on the server.
 RUN composer install --no-dev --optimize-autoloader
 
-# Set the correct ownership for the web server to write files if needed (e.g., logs, cache).
+# Set the correct ownership for the web server.
 RUN chown -R www-data:www-data /var/www/html
