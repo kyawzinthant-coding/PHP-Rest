@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'kyawzinthant/ecommerce-api',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => null,
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '6292824c7bd113b7798e3bbf942e1f41562ab324',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -83,9 +83,9 @@
             'dev_requirement' => false,
         ),
         'kyawzinthant/ecommerce-api' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => null,
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '6292824c7bd113b7798e3bbf942e1f41562ab324',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
