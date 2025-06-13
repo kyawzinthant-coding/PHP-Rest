@@ -111,9 +111,6 @@ class ProductRepository
     public function create(array $data): string
     {
         try {
-
-
-
             $newId = Uuid::uuid4()->toString();
 
             $stmt = $this->db->prepare("
