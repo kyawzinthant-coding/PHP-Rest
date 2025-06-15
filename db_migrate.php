@@ -8,35 +8,35 @@ require_once __DIR__ . '/config/bootstrap.php';
 
 use App\Core\Database;
 
-echo "Starting database migration (using UUIDs for IDs)...\n";
+echo "Starting database migration with new, enhanced schema...\n";
 
 try {
     $pdo = Database::getInstance(); // Get the PDO instance
 
-    // Disable foreign key checks
+    // Disable foreign key checks to allow dropping tables in any order
     $pdo->exec("SET foreign_key_checks = 0");
     echo "Foreign key checks disabled.\n";
 
-    // Get all tables
+    // Get all tables to drop them
     $stmt = $pdo->query("SHOW TABLES");
     $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
     if ($tables) {
         echo "Dropping existing tables...\n";
         foreach ($tables as $table) {
-            $dropQuery = "DROP TABLE IF EXISTS `$table`"; // Use IF EXISTS for safety
-            $pdo->exec($dropQuery);
+            $pdo->exec("DROP TABLE IF EXISTS `$table`");
             echo "Dropped table: $table\n";
         }
     } else {
         echo "No tables found in the database to drop.\n";
     }
 
-    echo "Creating tables with UUIDs as primary keys...\n";
+    echo "Creating new tables with UUIDs as primary keys...\n";
 
-    // Create Users Table
+    // --- Core Tables ---
+
     $pdo->exec("
-    CREATE TABLE IF NOT EXISTS `Users` (
+    CREATE TABLE `Users` (
         `id` CHAR(36) PRIMARY KEY,
         `name` VARCHAR(255) NOT NULL,
         `email` VARCHAR(255) NOT NULL UNIQUE,
@@ -48,11 +48,11 @@ try {
     ");
     echo "Table 'Users' created.\n";
 
-    // Create Brands Table
     $pdo->exec("
-    CREATE TABLE IF NOT EXISTS `Brands` (
+    CREATE TABLE `Brands` (
         `id` CHAR(36) PRIMARY KEY,
         `name` VARCHAR(255) NOT NULL UNIQUE,
+        `is_active` BOOLEAN NOT NULL DEFAULT TRUE,
         `brand_cloudinary_public_id` VARCHAR(255),
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -60,11 +60,11 @@ try {
     ");
     echo "Table 'Brands' created.\n";
 
-    // Create Categories Table
     $pdo->exec("
-    CREATE TABLE IF NOT EXISTS `Categories` (
+    CREATE TABLE `Categories` (
         `id` CHAR(36) PRIMARY KEY,
         `name` VARCHAR(255) NOT NULL UNIQUE,
+        `is_active` BOOLEAN NOT NULL DEFAULT TRUE,
         `category_cloudinary_public_id` VARCHAR(255),
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -72,24 +72,25 @@ try {
     ");
     echo "Table 'Categories' created.\n";
 
-    // Create Products Table
     $pdo->exec("
-    CREATE TABLE IF NOT EXISTS `Products` (
+    CREATE TABLE `Products` (
         `id` CHAR(36) PRIMARY KEY,
         `name` VARCHAR(255) NOT NULL,
         `description` TEXT NOT NULL,
         `brand_id` CHAR(36) NOT NULL,
         `category_id` CHAR(36) NOT NULL,
-        `size_ml` INT NOT NULL,
-        `price` INT NOT NULL,
-        `slug` VARCHAR(255), -- Consider adding UNIQUE NOT NULL if used for routing
-        `cloudinary_public_id` VARCHAR(255),
+        `price` DECIMAL(10,2) NOT NULL,
         `stock_quantity` INT NOT NULL DEFAULT 0,
+        `is_active` BOOLEAN NOT NULL DEFAULT TRUE,
+        `average_rating` DECIMAL(3,2) NOT NULL DEFAULT 0.00,
+        `review_count` INT NOT NULL DEFAULT 0,
+        `size_ml` INT NOT NULL,
         `top_notes` TEXT,
         `middle_notes` TEXT,
         `base_notes` TEXT,
         `gender_affinity` VARCHAR(50) DEFAULT 'Unisex',
-        `is_active` BOOLEAN DEFAULT TRUE,
+        `slug` VARCHAR(255) UNIQUE,
+        `cloudinary_public_id` VARCHAR(255),
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX `idx_product_brand` (`brand_id`),
@@ -100,57 +101,59 @@ try {
     ");
     echo "Table 'Products' created.\n";
 
-    // Create Orders Table
+    // --- Order & Payment Flow Tables ---
+
     $pdo->exec("
-    CREATE TABLE IF NOT EXISTS `Orders` (
+    CREATE TABLE `Orders` (
         `id` CHAR(36) PRIMARY KEY,
-        `user_id` CHAR(36), -- Nullable if guest checkouts allowed
+        `user_id` CHAR(36),
         `order_number` VARCHAR(50) NOT NULL UNIQUE,
-        `order_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `status` VARCHAR(50) NOT NULL DEFAULT 'Pending',
-        `total_amount` DECIMAL(10, 2) NOT NULL,
+        `total_amount` DECIMAL(10,2) NOT NULL,
         `shipping_customer_name` VARCHAR(255) NOT NULL,
         `shipping_customer_email` VARCHAR(255) NOT NULL,
-        `shipping_phone_number` VARCHAR(50),
-        `shipping_address_line1` VARCHAR(255) NOT NULL,
-        `shipping_city` VARCHAR(100) NOT NULL,
-        `shipping_state_province` VARCHAR(100),
-        `shipping_postal_code` VARCHAR(20) NOT NULL,
-        `shipping_country` VARCHAR(100) NOT NULL,
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX `idx_order_user` (`user_id`),
-        CONSTRAINT `fk_order_user` FOREIGN KEY (`user_id`) REFERENCES `Users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE -- Or ON DELETE RESTRICT
+        CONSTRAINT `fk_order_user` FOREIGN KEY (`user_id`) REFERENCES `Users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
     echo "Table 'Orders' created.\n";
 
-    // Create OrderItems Table
     $pdo->exec("
-    CREATE TABLE IF NOT EXISTS `OrderItems` (
+    CREATE TABLE `OrderItems` (
         `id` CHAR(36) PRIMARY KEY,
         `order_id` CHAR(36) NOT NULL,
         `product_id` CHAR(36) NOT NULL,
         `quantity` INT NOT NULL,
-        `price_at_purchase` DECIMAL(10, 2) NOT NULL,
-        `product_name_at_purchase` VARCHAR(255),
+        `price_at_purchase` DECIMAL(10,2) NOT NULL,
         INDEX `idx_orderitem_order` (`order_id`),
         INDEX `idx_orderitem_product` (`product_id`),
         CONSTRAINT `fk_orderitem_order` FOREIGN KEY (`order_id`) REFERENCES `Orders`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-        CONSTRAINT `fk_orderitem_product` FOREIGN KEY (`product_id`) REFERENCES `Products`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE -- RESTRICT so product isn't deleted if in an order
+        CONSTRAINT `fk_orderitem_product` FOREIGN KEY (`product_id`) REFERENCES `Products`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
     echo "Table 'OrderItems' created.\n";
 
-    // Create Payments Table
     $pdo->exec("
-    CREATE TABLE IF NOT EXISTS `Payments` (
+    CREATE TABLE `OrderStatusHistory` (
+        `id` CHAR(36) PRIMARY KEY,
+        `order_id` CHAR(36) NOT NULL,
+        `status` VARCHAR(50) NOT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT `fk_orderstatushistory_order` FOREIGN KEY (`order_id`) REFERENCES `Orders`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+    echo "Table 'OrderStatusHistory' created.\n";
+
+    $pdo->exec("
+    CREATE TABLE `Payments` (
         `id` CHAR(36) PRIMARY KEY,
         `order_id` CHAR(36) NOT NULL UNIQUE,
         `payment_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `payment_method_type` VARCHAR(50) NOT NULL,
         `payment_provider_txn_id` VARCHAR(255) UNIQUE,
-        `amount` DECIMAL(10, 2) NOT NULL,
+        `amount` DECIMAL(10,2) NOT NULL,
         `status` VARCHAR(50) NOT NULL DEFAULT 'Succeeded',
         `currency` VARCHAR(10) NOT NULL DEFAULT 'USD',
         `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -160,14 +163,69 @@ try {
     ");
     echo "Table 'Payments' created.\n";
 
+    // --- New Feature Tables ---
+
+    $pdo->exec("
+    CREATE TABLE `Wishlists` (
+        `user_id` CHAR(36) NOT NULL,
+        `product_id` CHAR(36) NOT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`user_id`, `product_id`),
+        CONSTRAINT `fk_wishlist_user` FOREIGN KEY (`user_id`) REFERENCES `Users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT `fk_wishlist_product` FOREIGN KEY (`product_id`) REFERENCES `Products`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+    echo "Table 'Wishlists' created.\n";
+
+    $pdo->exec("
+    CREATE TABLE `Reviews` (
+        `id` CHAR(36) PRIMARY KEY,
+        `user_id` CHAR(36) NOT NULL,
+        `product_id` CHAR(36) NOT NULL,
+        `rating` INT NOT NULL,
+        `review_text` TEXT,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY `idx_user_product_review` (`user_id`, `product_id`),
+        CONSTRAINT `fk_review_user` FOREIGN KEY (`user_id`) REFERENCES `Users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT `fk_review_product` FOREIGN KEY (`product_id`) REFERENCES `Products`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+    echo "Table 'Reviews' created.\n";
+
+    $pdo->exec("
+    CREATE TABLE `Discounts` (
+        `id` CHAR(36) PRIMARY KEY,
+        `code` VARCHAR(50) NOT NULL UNIQUE,
+        `description` TEXT,
+        `discount_type` VARCHAR(20) NOT NULL,
+        `value` DECIMAL(10,2) NOT NULL,
+        `start_date` TIMESTAMP NULL,
+        `end_date` TIMESTAMP NULL,
+        `is_active` BOOLEAN NOT NULL DEFAULT TRUE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+    echo "Table 'Discounts' created.\n";
+
+    $pdo->exec("
+    CREATE TABLE `ProductDiscounts` (
+        `product_id` CHAR(36) NOT NULL,
+        `discount_id` CHAR(36) NOT NULL,
+        PRIMARY KEY (`product_id`, `discount_id`),
+        CONSTRAINT `fk_productdiscounts_product` FOREIGN KEY (`product_id`) REFERENCES `Products`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT `fk_productdiscounts_discount` FOREIGN KEY (`discount_id`) REFERENCES `Discounts`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+    echo "Table 'ProductDiscounts' created.\n";
+
+
     // Re-enable foreign key checks
     $pdo->exec("SET foreign_key_checks = 1");
     echo "Foreign key checks re-enabled.\n";
 
-    echo "All tables created successfully with UUIDs as primary keys.\n";
+    echo "All tables created successfully.\n";
 } catch (PDOException $e) {
     echo "Database migration failed: " . $e->getMessage() . "\n";
-    // Re-enable foreign key checks in case of failure mid-script
+    // Re-enable foreign key checks in case of failure
     if (isset($pdo)) {
         $pdo->exec("SET foreign_key_checks = 1");
         echo "Foreign key checks re-enabled after failure.\n";

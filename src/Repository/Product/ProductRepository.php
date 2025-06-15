@@ -7,9 +7,7 @@ use PDO;
 use PDOException;
 use RuntimeException;
 use Ramsey\Uuid\Uuid;
-
-
-use App\Repository\DuplicateEntryException; // Make sure to include this line
+use App\Repository\DuplicateEntryException;
 use Error;
 
 class ProductRepository
@@ -90,20 +88,17 @@ class ProductRepository
         }
     }
 
-
     public function findById(string $id): ?array
     {
         try {
             $stmt = $this->db->prepare("SELECT * FROM products WHERE id = :id");
             $stmt->bindParam(':id', $id);
             $stmt->execute();
-
             $product = $stmt->fetch();
-
             return $product ?: null;
         } catch (PDOException $e) {
-            error_log($e->getMessage());
-            return [];
+            error_log("Repository Error ", $e->getMessage());
+            throw new RuntimeException("Could not retrieve product from database.", 500, $e);
         }
     }
 

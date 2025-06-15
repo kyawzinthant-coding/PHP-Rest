@@ -106,6 +106,18 @@ try {
     ]);
     error_log("Unexpected Error: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine() . "\nStack trace:\n" . $e->getTraceAsString());
     exit; // Terminate script
+} catch (Throwable $e) {
+    http_response_code(500); // Internal Server Error
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'An unexpected error occurred: ' . $e->getMessage(),
+        'dev_details' => [
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]
+    ]);
+    error_log("Unexpected Error/Exception: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine());
+    exit;
 }
 
 // No code should execute here if a route was matched and handled, or an exception was caught.

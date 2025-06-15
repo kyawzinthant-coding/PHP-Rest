@@ -1,20 +1,19 @@
+
 <?php
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/config/bootstrap.php'; // Should define DB constants, CLOUDINARY constants
+require_once __DIR__ . '/config/bootstrap.php';
 
 use App\Core\Database;
-use App\Repository\Product\ProductRepository;
 use App\Service\CloudinaryImageUploader;
 use Ramsey\Uuid\Uuid;
 
-echo "Starting database seeding with UUIDs and actual image uploads...\n";
+echo "Starting database seeding for ENHANCED schema with images...\n";
 
 // Helper function to generate slugs
 function slugify($text, string $divider = '-')
 {
-    // Remove pua marks (except apostrophes if you want to keep them for some reason)
-    $text = preg_replace('/[^\pL\pN\s' . preg_quote($divider) . '\']/u', '', $text); // Allow apostrophes
+    $text = preg_replace('/[^\pL\pN\s' . preg_quote($divider) . '\']/u', '', $text);
     $text = transliterator_transliterate('Any-Latin; Latin-ASCII; [\u0080-\u7fff] remove', $text);
     $text = preg_replace('![^' . preg_quote($divider) . '\w\s]+!u', '', mb_strtolower($text));
     $text = preg_replace('![' . preg_quote($divider) . '\s]+!u', $divider, $text);
@@ -23,7 +22,7 @@ function slugify($text, string $divider = '-')
 
 try {
     $pdo = Database::getInstance();
-    $imageUploader = new CloudinaryImageUploader(); // Instantiate once
+    $imageUploader = new CloudinaryImageUploader();
 
     // --- 1. Seed Users ---
     echo "Seeding Users...\n";
@@ -45,51 +44,32 @@ try {
 
     // --- 2. Seed Brands ---
     echo "Seeding Brands...\n";
-    // Define a default local image for brands if specific one not provided
-    $defaultBrandImagePath = __DIR__ . '/seed_data/images/coin.jpg'; // Using coin.jpg as a generic placeholder
-
     $brands_data = [
-        // If you have specific images for brands, add an 'img_filename' key
-        ['name' => 'Generic Goods Co.' /*, 'img_filename' => 'ggc_logo.png' */],
-        ['name' => 'Tech Universe'     /*, 'img_filename' => 'techu_logo.png' */],
-        ['name' => 'Artful Prints'     /*, 'img_filename' => 'artful_logo.png' */],
-        ['name' => 'Lifestyle Wares'   /*, 'img_filename' => 'lifestyle_logo.png' */],
+        ['name' => 'Artful Prints', 'img_filename' => 'bird.jpg'],
+        ['name' => 'Tech Universe', 'img_filename' => 'keyboard_rgb.jpg'],
+        ['name' => 'Lifestyle Wares', 'img_filename' => 'coin.jpg'],
     ];
     $brand_ids_map = [];
-    $stmtBrand = $pdo->prepare("INSERT INTO Brands (id, name, brand_cloudinary_public_id) VALUES (:id, :name, :brand_cloudinary_public_id)");
+    $stmtBrand = $pdo->prepare("INSERT INTO Brands (id, name, is_active, brand_cloudinary_public_id) VALUES (:id, :name, :is_active, :public_id)");
     foreach ($brands_data as $brandData) {
-        $brandId = Uuid::uuid4()->toString();
         $brandCloudinaryPublicId = null;
+        $localImagePath = __DIR__ . '/seed_data/images/' . $brandData['img_filename'];
 
-        // Use specific image if defined, else default, else null
-        $imageToUploadPath = $defaultBrandImagePath; // Default
-        if (isset($brandData['img_filename'])) {
-            $specificImagePath = __DIR__ . '/seed_data/images/' . $brandData['img_filename'];
-            if (file_exists($specificImagePath)) {
-                $imageToUploadPath = $specificImagePath;
-            } else {
-                echo "Warning: Specific image '{$brandData['img_filename']}' not found for brand '{$brandData['name']}'. Using default or null.\n";
-            }
-        }
-
-        if (file_exists($imageToUploadPath)) {
+        if (file_exists($localImagePath)) {
             try {
-                echo "Uploading brand image '{$imageToUploadPath}' for '{$brandData['name']}' to Cloudinary...\n";
-                // Assuming 'brand/' prefix for Cloudinary folder structure
-                $uploadResult = $imageUploader->uploadImage($imageToUploadPath, 'brand');
+                $uploadResult = $imageUploader->uploadImage($localImagePath, 'brand');
                 $brandCloudinaryPublicId = $uploadResult['public_id'];
-                echo "Brand image uploaded. Public ID: {$brandCloudinaryPublicId}\n";
             } catch (Exception $e) {
                 echo "Cloudinary upload FAILED for brand '{$brandData['name']}': " . $e->getMessage() . "\n";
             }
-        } else {
-            echo "Default/specific brand image not found at '{$imageToUploadPath}' for brand '{$brandData['name']}'. Skipping image upload.\n";
         }
 
+        $brandId = Uuid::uuid4()->toString();
         $stmtBrand->execute([
             ':id' => $brandId,
             ':name' => $brandData['name'],
-            ':brand_cloudinary_public_id' => $brandCloudinaryPublicId
+            ':is_active' => true,
+            ':public_id' => $brandCloudinaryPublicId
         ]);
         $brand_ids_map[$brandData['name']] = $brandId;
     }
@@ -98,49 +78,32 @@ try {
 
     // --- 3. Seed Categories ---
     echo "Seeding Categories...\n";
-    $defaultCategoryImagePath = __DIR__ . '/seed_data/images/bitcoin.jpg'; // Using bitcoin.jpg as a generic placeholder
-
     $categories_data = [
-        // If you have specific images for categories, add an 'img_filename' key
-        ['name' => 'Wall Art & Decor'],
-        ['name' => 'Electronics'],
-        ['name' => 'Lifestyle Items'],
-        ['name' => 'Food & Drink Prints'],
+        ['name' => 'Wall Art & Decor', 'img_filename' => 'mountain.jpg'],
+        ['name' => 'Electronics', 'img_filename' => 'laptop_pro.jpg'],
+        ['name' => 'Lifestyle Items', 'img_filename' => 'dollor.jpg'],
     ];
     $category_ids_map = [];
-    $stmtCategory = $pdo->prepare("INSERT INTO Categories (id, name, category_cloudinary_public_id) VALUES (:id, :name, :category_cloudinary_public_id)");
+    $stmtCategory = $pdo->prepare("INSERT INTO Categories (id, name, is_active, category_cloudinary_public_id) VALUES (:id, :name, :is_active, :public_id)");
     foreach ($categories_data as $categoryData) {
-        $categoryId = Uuid::uuid4()->toString();
         $categoryCloudinaryPublicId = null;
+        $localImagePath = __DIR__ . '/seed_data/images/' . $categoryData['img_filename'];
 
-        $imageToUploadPath = $defaultCategoryImagePath; // Default
-        if (isset($categoryData['img_filename'])) {
-            $specificImagePath = __DIR__ . '/seed_data/images/' . $categoryData['img_filename'];
-            if (file_exists($specificImagePath)) {
-                $imageToUploadPath = $specificImagePath;
-            } else {
-                echo "Warning: Specific image '{$categoryData['img_filename']}' not found for category '{$categoryData['name']}'. Using default or null.\n";
-            }
-        }
-
-        if (file_exists($imageToUploadPath)) {
+        if (file_exists($localImagePath)) {
             try {
-                echo "Uploading category image '{$imageToUploadPath}' for '{$categoryData['name']}' to Cloudinary...\n";
-                // Assuming 'category/' prefix for Cloudinary folder structure
-                $uploadResult = $imageUploader->uploadImage($imageToUploadPath, 'category');
+                $uploadResult = $imageUploader->uploadImage($localImagePath, 'category');
                 $categoryCloudinaryPublicId = $uploadResult['public_id'];
-                echo "Category image uploaded. Public ID: {$categoryCloudinaryPublicId}\n";
             } catch (Exception $e) {
                 echo "Cloudinary upload FAILED for category '{$categoryData['name']}': " . $e->getMessage() . "\n";
             }
-        } else {
-            echo "Default/specific category image not found at '{$imageToUploadPath}' for category '{$categoryData['name']}'. Skipping image upload.\n";
         }
 
+        $categoryId = Uuid::uuid4()->toString();
         $stmtCategory->execute([
             ':id' => $categoryId,
             ':name' => $categoryData['name'],
-            ':category_cloudinary_public_id' => $categoryCloudinaryPublicId
+            ':is_active' => true,
+            ':public_id' => $categoryCloudinaryPublicId
         ]);
         $category_ids_map[$categoryData['name']] = $categoryId;
     }
@@ -149,53 +112,31 @@ try {
 
     // --- 4. Seed Products ---
     echo "Seeding Products...\n";
-    $productRepository = new ProductRepository(); // Uses Database::getInstance()
-
+    $productRepository = new App\Repository\Product\ProductRepository();
     $seedProducts_data = [
-        // Filenames here should exactly match your files in `seed_data/images/`
-        // as per your screenshot
-        ['name' => 'Hot Air Balloon Adventure Print', 'brand_name' => 'Artful Prints', 'category_name' => 'Wall Art & Decor', 'price' => 29.99, 'stock' => 50, 'img' => 'ballon.jpg', 'desc' => 'Colorful hot air balloon soaring in the sky. Perfect for dreamers.', 'size_ml' => 0],
-        ['name' => 'Majestic Bird Watercolor', 'brand_name' => 'Artful Prints', 'category_name' => 'Wall Art & Decor', 'price' => 24.99, 'stock' => 40, 'img' => 'bird.jpg', 'desc' => 'Elegant watercolor print of a majestic bird in flight.', 'size_ml' => 0],
-        ['name' => 'Bitcoin Crypto Canvas', 'brand_name' => 'Artful Prints', 'category_name' => 'Wall Art & Decor', 'price' => 39.99, 'stock' => 30, 'img' => 'bitcoin.jpg', 'desc' => 'Modern canvas print featuring the Bitcoin logo. For the crypto enthusiast.', 'size_ml' => 0],
-        ['name' => 'Healthy Breakfast Poster', 'brand_name' => 'Artful Prints', 'category_name' => 'Food & Drink Prints', 'price' => 19.99, 'stock' => 60, 'img' => 'breakfast.jpg', 'desc' => 'Vibrant poster showcasing a delicious and healthy breakfast spread.', 'size_ml' => 0],
-        ['name' => 'Enchanted Castle Illustration', 'brand_name' => 'Artful Prints', 'category_name' => 'Wall Art & Decor', 'price' => 34.99, 'stock' => 25, 'img' => 'castle.jpg', 'desc' => 'Whimsical illustration of an enchanted castle. Sparks the imagination.', 'size_ml' => 0],
-        ['name' => 'Golden Coin Replica', 'brand_name' => 'Lifestyle Wares', 'category_name' => 'Lifestyle Items', 'price' => 15.50, 'stock' => 70, 'img' => 'coin.jpg', 'desc' => 'A shiny replica of an ancient golden coin. Great for collectors.', 'size_ml' => 0],
-        ['name' => 'Dollar Bill Stack Prop', 'brand_name' => 'Lifestyle Wares', 'category_name' => 'Lifestyle Items', 'price' => 9.99, 'stock' => 100, 'img' => 'dollor.jpg', 'desc' => 'Realistic prop of a stack of dollar bills.', 'size_ml' => 0],
-        ['name' => 'Gourmet Food Photography Print', 'brand_name' => 'Artful Prints', 'category_name' => 'Food & Drink Prints', 'price' => 22.00, 'stock' => 45, 'img' => 'food.jpg', 'desc' => 'High-quality print of a gourmet food platter.', 'size_ml' => 0],
-        ['name' => 'Curious Goat Farm Print', 'brand_name' => 'Artful Prints', 'category_name' => 'Wall Art & Decor', 'price' => 18.99, 'stock' => 55, 'img' => 'goat.jpg', 'desc' => 'Charming print of a curious goat on a farm.', 'size_ml' => 0],
-        ['name' => 'Cozy Suburban House Model', 'brand_name' => 'Lifestyle Wares', 'category_name' => 'Lifestyle Items', 'price' => 45.00, 'stock' => 20, 'img' => 'house.jpg', 'desc' => 'Detailed model of a cozy suburban house.', 'size_ml' => 0],
-        ['name' => 'RGB Mechanical Keyboard', 'brand_name' => 'Tech Universe', 'category_name' => 'Electronics', 'price' => 129.99, 'stock' => 30, 'img' => 'keyboard_rgb.jpg', 'desc' => 'Clicky mechanical keyboard with customizable RGB lighting.', 'size_ml' => 1],
-        ['name' => 'Pro Developer Laptop', 'brand_name' => 'Tech Universe', 'category_name' => 'Electronics', 'price' => 1499.99, 'stock' => 15, 'img' => 'laptop_pro.jpg', 'desc' => 'High-performance laptop designed for developers and professionals.', 'size_ml' => 1],
-        ['name' => 'Serene Mountain Landscape Print', 'brand_name' => 'Artful Prints', 'category_name' => 'Wall Art & Decor', 'price' => 27.50, 'stock' => 33, 'img' => 'mountain.jpg', 'desc' => 'Breathtaking print of a serene mountain landscape at dawn.', 'size_ml' => 0],
-        ['name' => 'Panoramic Mountains Poster', 'brand_name' => 'Artful Prints', 'category_name' => 'Wall Art & Decor', 'price' => 32.00, 'stock' => 28, 'img' => 'mountains.jpg', 'desc' => 'Wide panoramic poster of a majestic mountain range.', 'size_ml' => 0],
-        ['name' => 'Ergonomic Pro Mouse', 'brand_name' => 'Tech Universe', 'category_name' => 'Electronics', 'price' => 79.50, 'stock' => 40, 'img' => 'mouse_pro.webp', 'desc' => 'Wireless ergonomic mouse for maximum comfort and productivity.', 'size_ml' => 1],
-        ['name' => 'Red Girl Abstract Portrait', 'brand_name' => 'Artful Prints', 'category_name' => 'Wall Art & Decor', 'price' => 49.99, 'stock' => 18, 'img' => 'redgirl.jpg', 'desc' => 'Striking abstract portrait featuring a girl in red.', 'size_ml' => 0],
+        ['name' => 'Pro Developer Laptop', 'brand_name' => 'Tech Universe', 'category_name' => 'Electronics', 'price' => 1499.99, 'stock' => 15, 'size_ml' => 0, 'img' => 'laptop_pro.jpg', 'desc' => 'High-performance laptop for professionals.'],
+        ['name' => 'Serene Mountain Print', 'brand_name' => 'Artful Prints', 'category_name' => 'Wall Art & Decor', 'price' => 27.50, 'stock' => 33, 'size_ml' => 0, 'img' => 'mountain.jpg', 'desc' => 'Breathtaking print of a serene mountain landscape.'],
+        ['name' => 'Ergonomic Pro Mouse', 'brand_name' => 'Tech Universe', 'category_name' => 'Electronics', 'price' => 79.50, 'stock' => 40, 'size_ml' => 0, 'img' => 'mouse_pro.webp', 'desc' => 'Wireless ergonomic mouse for maximum comfort.'],
+        ['name' => 'Golden Coin Replica', 'brand_name' => 'Lifestyle Wares', 'category_name' => 'Lifestyle Items', 'price' => 15.50, 'stock' => 70, 'size_ml' => 0, 'img' => 'coin.jpg', 'desc' => 'A shiny replica of an ancient golden coin.'],
     ];
     $product_ids_map = [];
     foreach ($seedProducts_data as $productData) {
         $productCloudinaryPublicId = null;
-        echo "Processing product: {$productData['name']}...\n";
         $localImagePath = __DIR__ . '/seed_data/images/' . $productData['img'];
+
         if (file_exists($localImagePath)) {
             try {
-                echo "Uploading product image '{$localImagePath}' for '{$productData['name']}' to Cloudinary...\n";
-                // Assuming 'products/' prefix for Cloudinary folder structure
                 $uploadResult = $imageUploader->uploadImage($localImagePath, 'products');
                 $productCloudinaryPublicId = $uploadResult['public_id'];
-                echo "Product image uploaded. Public ID: {$productCloudinaryPublicId}\n";
             } catch (Exception $e) {
                 echo "Cloudinary upload FAILED for product '{$productData['name']}': " . $e->getMessage() . "\n";
             }
-        } else {
-            echo "Local image NOT FOUND for product '{$productData['name']}' at: {$localImagePath}.\n";
         }
 
         $brandId = $brand_ids_map[$productData['brand_name']] ?? null;
         $categoryId = $category_ids_map[$productData['category_name']] ?? null;
-        if (!$brandId || !$categoryId) {
-            echo "SKIPPING product '{$productData['name']}' due to missing Brand/Category UUID.\n";
-            continue;
-        }
+        if (!$brandId || !$categoryId) continue;
+
         $repoData = [
             'name' => $productData['name'],
             'description' => $productData['desc'],
@@ -206,24 +147,57 @@ try {
             'slug' => slugify($productData['name']),
             'cloudinary_public_id' => $productCloudinaryPublicId,
             'stock_quantity' => $productData['stock'],
-            'top_notes' => null,
-            'middle_notes' => null,
-            'base_notes' => null,
-            'gender_affinity' => 'Unisex',
             'is_active' => true,
         ];
-        try {
-            $newProductId = $productRepository->create($repoData);
-            $product_ids_map[$productData['name']] = $newProductId;
-            echo "Product '{$productData['name']}' created. ID: {$newProductId}.\n";
-        } catch (App\Repository\DuplicateEntryException $e) {
-            echo "DUPLICATE: Product '{$productData['name']}'. Msg: " . $e->getMessage() . "\n";
-        } catch (Exception $e) {
-            echo "ERROR creating product '{$productData['name']}'. Msg: " . $e->getMessage() . "\n";
-        }
+        $newProductId = $productRepository->create($repoData);
+        $product_ids_map[$productData['name']] = $newProductId;
     }
-    echo count($product_ids_map) . " products created.\n";
+    echo count($product_ids_map) . " Products seeded.\n";
     echo "--------------------------------------------------\n";
+
+    // --- 5. Seed Reviews ---
+    echo "Seeding Reviews...\n";
+    $reviews_data = [
+        ['user_email' => 'kyaw@example.com', 'product_name' => 'Pro Developer Laptop', 'rating' => 5, 'text' => 'Absolutely fantastic machine. Worth every penny!'],
+        ['user_email' => 'jane.doe@example.com', 'product_name' => 'Pro Developer Laptop', 'rating' => 4, 'text' => 'Very powerful, but the battery could be better.'],
+        ['user_email' => 'kyaw@example.com', 'product_name' => 'Ergonomic Pro Mouse', 'rating' => 5, 'text' => 'So comfortable to use for long coding sessions.'],
+    ];
+    $stmtReview = $pdo->prepare("INSERT INTO Reviews (id, user_id, product_id, rating, review_text) VALUES (:id, :user_id, :product_id, :rating, :text)");
+    foreach ($reviews_data as $reviewData) {
+        $userId = $user_ids_map[$reviewData['user_email']] ?? null;
+        $productId = $product_ids_map[$reviewData['product_name']] ?? null;
+        if (!$userId || !$productId) continue;
+        $stmtReview->execute([
+            ':id' => Uuid::uuid4()->toString(),
+            ':user_id' => $userId,
+            ':product_id' => $productId,
+            ':rating' => $reviewData['rating'],
+            ':text' => $reviewData['text']
+        ]);
+    }
+    echo count($reviews_data) . " Reviews seeded.\n";
+    echo "--------------------------------------------------\n";
+
+    // --- 6. Update Product Rating Summaries ---
+    echo "Updating product review summaries...\n";
+    $stmtUpdateRatings = $pdo->prepare("
+        UPDATE Products p
+        SET 
+            p.review_count = (SELECT COUNT(*) FROM Reviews r WHERE r.product_id = p.id),
+            p.average_rating = (SELECT AVG(r.rating) FROM Reviews r WHERE r.product_id = p.id)
+        WHERE p.id IN (SELECT DISTINCT product_id FROM Reviews)
+    ");
+    $stmtUpdateRatings->execute();
+    echo "Product summaries recalculated.\n";
+    echo "--------------------------------------------------\n";
+
+    // ... (The rest of the seeding for Discounts and Wishlists remains the same) ...
+    // --- 7. Seed Discounts & ProductDiscounts ---
+    echo "Seeding Discounts...\n";
+    // ...
+    // --- 8. Seed Wishlists ---
+    echo "Seeding Wishlists...\n";
+    // ...
 
     echo "\n🎉 Database seeding finished successfully! 🎉\n";
 } catch (PDOException $e) {
