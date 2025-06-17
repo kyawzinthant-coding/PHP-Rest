@@ -204,13 +204,13 @@ class BrandController
                 return;
             }
 
-            if ($brand['brand_cloudinary_public_id']) {
-                try {
-                    $this->imageUploader->deleteImage($brand['brand_cloudinary_public_id']);
-                } catch (Exception $e) {
-                    error_log("Failed to delete Cloudinary image: " . $e->getMessage());
-                }
-            }
+            // if ($brand['brand_cloudinary_public_id']) {
+            //     try {
+            //         $this->imageUploader->deleteImage($brand['brand_cloudinary_public_id']);
+            //     } catch (Exception $e) {
+            //         error_log("Failed to delete Cloudinary image: " . $e->getMessage());
+            //     }
+            // }
 
             if ($this->brandRepository->delete($id)) {
                 echo json_encode([

@@ -22,7 +22,7 @@ class BrandRepository
     public function getAllBrands(): array
     {
         try {
-            $stmt = $this->db->prepare("SELECT * FROM brands ORDER BY created_at DESC");
+            $stmt = $this->db->prepare("SELECT * FROM brands WHERE is_active = 1 ORDER BY created_at DESC ");
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
@@ -133,7 +133,7 @@ class BrandRepository
     public function delete(string $id): bool
     {
         try {
-            $stmt = $this->db->prepare("DELETE FROM brands WHERE id = :id");
+            $stmt = $this->db->prepare("UPDATE brands SET is_active = 0  WHERE id = :id");
             $stmt->bindParam(':id', $id);
             return $stmt->execute();
         } catch (PDOException $e) {

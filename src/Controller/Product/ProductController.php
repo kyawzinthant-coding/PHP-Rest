@@ -44,6 +44,7 @@ class ProductController
             }
         }
     }
+
     public function getCategoryAndBrand(): void
     {
         $categories = $this->categoryRepository->getAllCategories();
@@ -335,13 +336,13 @@ class ProductController
                 return;
             }
 
-            if ($existingProduct['cloudinary_public_id']) {
-                try {
-                    $this->imageUploader->deleteImage($existingProduct['cloudinary_public_id']);
-                } catch (Exception $e) {
-                    error_log("Failed to delete Cloudinary image {$existingProduct['cloudinary_public_id']} during product deletion: " . $e->getMessage());
-                }
-            }
+            // if ($existingProduct['cloudinary_public_id']) {
+            //     try {
+            //         $this->imageUploader->deleteImage($existingProduct['cloudinary_public_id']);
+            //     } catch (Exception $e) {
+            //         error_log("Failed to delete Cloudinary image {$existingProduct['cloudinary_public_id']} during product deletion: " . $e->getMessage());
+            //     }
+            // }
 
             $deleted = $this->productRepository->delete($id);
 

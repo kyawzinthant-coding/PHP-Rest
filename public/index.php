@@ -55,7 +55,7 @@ $router->post('/api/v1/auth/logout', [AuthController::class, 'logout']); // Add 
 $router->get('/api/v1/auth/me', [AuthController::class, 'getCurrentUser'], [AuthMiddleware::class]);
 
 // Category routes
-$router->get('/api/v1/category', [CategoryController::class, 'index'], [AuthMiddleware::class]);
+$router->get('/api/v1/category', [CategoryController::class, 'index'],);
 $router->post('/api/v1/category', [CategoryController::class, 'create']);
 $router->delete('/api/v1/category/{id}', [CategoryController::class, 'delete']);
 $router->post('/api/v1/category/{id}', [CategoryController::class, 'update']);

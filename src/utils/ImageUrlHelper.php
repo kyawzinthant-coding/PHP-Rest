@@ -2,6 +2,8 @@
 
 namespace App\Utils;
 
+use Exception;
+
 // Ensure CLOUDINARY_CLOUD_NAME is defined from bootstrap.php
 if (!defined('CLOUDINARY_CLOUD_NAME')) {
 }
@@ -42,16 +44,19 @@ class ImageUrlHelper
      * @param string $imageUrlKey The key to assign the generated image URL to (e.g., 'image_url').
      * @return array Transformed items with the image URL added.
      */
-    public static function transformItemsWithImageUrls(array $items, string $publicId,  string $publicIdKey = 'cloudinary_public_id', string $imageUrlKey = 'image_url'): array
+    public static function transformItemsWithImageUrls(array $items, string $publicId,  string $publicIdKey = 'cloudinary_public_id', string $imageUrlKey = 'image_url')
     {
-
-        if (!is_array($items)) {
-            return [];
+        try {
+            if (!is_array($items)) {
+                return [];
+            }
+            return array_map(function ($item) use ($publicId, $imageUrlKey) {
+                $publicId = $item[$publicId] ?? null;
+                $item[$imageUrlKey] = self::generateUrl($publicId);
+                return $item;
+            }, $items);
+        } catch (Exception $error) {
+            echo "Error transforming items with image URLs: " . $error->getMessage();
         }
-        return array_map(function ($item) use ($publicId, $imageUrlKey) {
-            $publicId = $item[$publicId] ?? null;
-            $item[$imageUrlKey] = self::generateUrl($publicId);
-            return $item;
-        }, $items);
     }
 }

@@ -45,7 +45,7 @@ class ProductRepository
                 LEFT JOIN categories c ON p.category_id = c.id
             ";
 
-            $whereClauses = [];
+            $whereClauses = ["p.is_active = 1"];
             $bindings = [];
 
             if (!empty($filters['categoryId'])) {
@@ -67,7 +67,7 @@ class ProductRepository
                 $sql .= " WHERE " . implode(" AND ", $whereClauses);
             }
 
-            $sql .= " ORDER BY p.created_at DESC";
+            $sql .= " ORDER BY p.created_at DESC ";
 
             try {
                 $stmt = $this->db->prepare($sql);
@@ -235,17 +235,30 @@ class ProductRepository
 
     public function delete(string $id): bool
     {
+        // try {
+        //     $stmt = $this->db->prepare("DELETE FROM products WHERE id = :id");
+        //     $stmt->bindParam(':id', $id);
+        //     $stmt->execute();
+        //     return $stmt->rowCount() > 0;
+        // } catch (PDOException $e) {
+        //     error_log("Error in ProductRepository::update: " . $e->getMessage());
+
+        //     throw new RuntimeException("Could not update product in database: " . $e->getMessage());
+        // }
         try {
-            $stmt = $this->db->prepare("DELETE FROM products WHERE id = :id");
+            // BEFORE (Old Code):
+            // $stmt = $this->db->prepare("DELETE FROM products WHERE id = :id");
+
+            // AFTER (New Code):
+            $stmt = $this->db->prepare("UPDATE products SET is_active = 0 WHERE id = :id");
+
             $stmt->bindParam(':id', $id);
             $stmt->execute();
             return $stmt->rowCount() > 0;
         } catch (PDOException $e) {
-            error_log("Error in ProductRepository::update: " . $e->getMessage());
-            if ($e->getCode() === '23000') { // SQLSTATE for Integrity Constraint Violation
-                throw new DuplicateEntryException("Product with this name already exists."); // <--- Throw custom exception
-            }
-            throw new RuntimeException("Could not update product in database: " . $e->getMessage());
+            // ... error handling is the same ...
+            // You can remove the DuplicateEntryException catch here as an UPDATE won't cause it
+            throw new RuntimeException("Could not deactivate product in database: " . $e->getMessage());
         }
     }
 }

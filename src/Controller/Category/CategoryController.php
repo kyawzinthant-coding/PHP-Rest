@@ -215,13 +215,13 @@ class CategoryController
                 return;
             }
 
-            if ($category['category_cloudinary_public_id']) {
-                try {
-                    $this->imageUploader->deleteImage($category['category_cloudinary_public_id']);
-                } catch (Exception $e) {
-                    error_log("Failed to delete Cloudinary image {$category['category_cloudinary_public_id']} during product deletion: " . $e->getMessage());
-                }
-            }
+            // if ($category['category_cloudinary_public_id']) {
+            //     try {
+            //         $this->imageUploader->deleteImage($category['category_cloudinary_public_id']);
+            //     } catch (Exception $e) {
+            //         error_log("Failed to delete Cloudinary image {$category['category_cloudinary_public_id']} during product deletion: " . $e->getMessage());
+            //     }
+            // }
 
 
             $deletedCategory = $this->categoryRepository->delete($id);

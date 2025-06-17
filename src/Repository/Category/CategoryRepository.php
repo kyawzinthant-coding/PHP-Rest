@@ -24,7 +24,7 @@ class CategoryRepository
     public function getAllCategories(): array
     {
         try {
-            $stmt = $this->db->prepare("SELECT * FROM categories ORDER BY created_at DESC");
+            $stmt = $this->db->prepare("SELECT * FROM categories WHERE is_active = 1 ORDER BY created_at DESC");
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
@@ -138,7 +138,7 @@ class CategoryRepository
     public function delete(string $id): bool
     {
         try {
-            $stmt = $this->db->prepare("DELETE FROM categories WHERE id = :id");
+            $stmt = $this->db->prepare("UPDATE categories SET is_active = 0  WHERE id = :id");
             $stmt->bindParam(':id', $id, PDO::PARAM_STR);
             return $stmt->execute();
         } catch (PDOException $e) {

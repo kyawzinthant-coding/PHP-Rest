@@ -23,7 +23,7 @@
   "scripts": {
     "dev": [
       "Composer\\Config::disableProcessTimeout",
-      "php -S 127.0.0.1:8000 -t public"
+      "php -S 127.0.0.1:8888 -t public"
     ],
     "migrate": "php db_migrate.php",
     "seed": "php db_seed.php"
