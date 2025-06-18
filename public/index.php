@@ -13,6 +13,7 @@ use App\Controller\Product\ProductController;
 use App\Exception\ValidationException;
 use App\Middleware\AuthMiddleware;
 use App\Controller\Brand\BrandController;
+use App\Controller\Review\ReviewController;
 use App\Repository\DuplicateEntryException;
 use App\Controller\Wishlist\WishlistController;
 
@@ -72,9 +73,12 @@ $router->delete('/api/v1/brand/{id}', [BrandController::class, 'delete']);
 $router->get('/api/v1/filter-type', [ProductController::class, 'getCategoryAndBrand']);
 
 // Wishlist routes
-
 $router->get('/api/v1/wishlist', [WishlistController::class, 'getWishlist'], [AuthMiddleware::class]);
 $router->post('/api/v1/wishlist/{productId}', [WishlistController::class, 'toggleWishlistItem'], [AuthMiddleware::class]);
+
+// Review routes
+$router->get('/api/v1/products/{productId}/reviews', [ReviewController::class, 'getReviewsForProduct']);
+$router->post('/api/v1/products/{productId}/reviews', [ReviewController::class, 'create'], [AuthMiddleware::class]);
 
 $requestUri = $_SERVER['REQUEST_URI'];
 $requestMethod = $_SERVER['REQUEST_METHOD'];
