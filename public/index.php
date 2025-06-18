@@ -14,6 +14,7 @@ use App\Exception\ValidationException;
 use App\Middleware\AuthMiddleware;
 use App\Controller\Brand\BrandController;
 use App\Repository\DuplicateEntryException;
+use App\Controller\Wishlist\WishlistController;
 
 header('Access-Control-Allow-Origin:  http://localhost:5173 '); // Allow all origins for CORS (change this in production)
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
@@ -69,6 +70,11 @@ $router->delete('/api/v1/brand/{id}', [BrandController::class, 'delete']);
 
 
 $router->get('/api/v1/filter-type', [ProductController::class, 'getCategoryAndBrand']);
+
+// Wishlist routes
+
+$router->get('/api/v1/wishlist', [WishlistController::class, 'getWishlist'], [AuthMiddleware::class]);
+$router->post('/api/v1/wishlist/{productId}', [WishlistController::class, 'toggleWishlistItem'], [AuthMiddleware::class]);
 
 $requestUri = $_SERVER['REQUEST_URI'];
 $requestMethod = $_SERVER['REQUEST_METHOD'];
