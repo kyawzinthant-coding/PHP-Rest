@@ -91,13 +91,31 @@ class ProductRepository
     public function findById(string $id): ?array
     {
         try {
-            $stmt = $this->db->prepare("SELECT * FROM products WHERE id = :id");
+
+            $sql = "
+                SELECT 
+                    p.*, -- Select all columns from the products table
+                    b.name AS brand_name,
+                    c.name AS category_name
+                FROM 
+                    products p
+                LEFT JOIN 
+                    brands b ON p.brand_id = b.id
+                LEFT JOIN 
+                    categories c ON p.category_id = c.id
+                WHERE 
+                    p.id = :id AND p.is_active = 1
+            ";
+
+            $stmt = $this->db->prepare($sql);
             $stmt->bindParam(':id', $id);
             $stmt->execute();
-            $product = $stmt->fetch();
+
+            $product = $stmt->fetch(PDO::FETCH_ASSOC);
+
             return $product ?: null;
         } catch (PDOException $e) {
-            error_log("Repository Error ", $e->getMessage());
+            error_log("Repository Error in findById: " . $e->getMessage());
             throw new RuntimeException("Could not retrieve product from database.", 500, $e);
         }
     }

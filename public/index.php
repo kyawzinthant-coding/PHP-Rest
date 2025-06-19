@@ -17,7 +17,15 @@ use App\Controller\Review\ReviewController;
 use App\Repository\DuplicateEntryException;
 use App\Controller\Wishlist\WishlistController;
 
-header('Access-Control-Allow-Origin:  http://localhost:5173 '); // Allow all origins for CORS (change this in production)
+$allowed_origins = [
+    'http://localhost:5173',
+    'http://localhost:5174'
+];
+
+if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowed_origins)) {
+    header('Access-Control-Allow-Origin: ' . $_SERVER['HTTP_ORIGIN']);
+};
+
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization'); // Add any other headers your frontend might send
 header('Access-Control-Allow-Credentials: true'); // If you plan to send cookies/auth headers
