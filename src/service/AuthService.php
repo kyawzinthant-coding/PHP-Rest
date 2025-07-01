@@ -46,7 +46,7 @@ class AuthService
         }
 
         // User authenticated, generate JWT
-        return $this->generateToken($user['id'], $user['email'], $user['role']);
+        return $this->generateToken($user['id'], $user['email'], $user['role'], $user['name']);
     }
 
     /**

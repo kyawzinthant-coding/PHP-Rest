@@ -16,6 +16,7 @@ use App\Controller\Brand\BrandController;
 use App\Controller\Review\ReviewController;
 use App\Repository\DuplicateEntryException;
 use App\Controller\Wishlist\WishlistController;
+use App\Middleware\OptionalAuthMiddleware;
 
 $allowed_origins = [
     'http://localhost:5173',
@@ -48,9 +49,9 @@ $router->get('/', function () {
 });
 
 // product controller
-$router->get('/api/v1/products',  [ProductController::class, 'index']);
+$router->get('/api/v1/products',  [ProductController::class, 'index'], [OptionalAuthMiddleware::class]);
 $router->post('/api/v1/products', [ProductController::class, 'store']);
-$router->get('/api/v1/products/{id}', [ProductController::class, 'GetProductById']);
+$router->get('/api/v1/products/{id}', [ProductController::class, 'GetProductById'], [OptionalAuthMiddleware::class]);
 $router->post('/api/v1/products/{id}', [ProductController::class, 'update']);
 $router->delete('/api/v1/products/{id}', [ProductController::class, 'destroy']);
 $router->get('/api/v1/products/categoryId/{id}', [ProductController::class, 'getProductsByCategoryId']);

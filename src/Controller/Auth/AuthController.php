@@ -77,8 +77,6 @@ class AuthController
             $httpOnly = true; // Crucial: JavaScript cannot access it
             $sameSite = 'Lax'; // Or 'Strict' or 'None' (if 'None', $secure must be true)
 
-
-
             setcookie($cookieName, $cookieValue, [
                 'expires' => $expiry,
                 'path' => $path,
@@ -88,13 +86,11 @@ class AuthController
                 'samesite' => $sameSite,
             ]);
 
-            // You can still send a success message, but not the token itself in the body
+            // You can also send the token in the response body
             http_response_code(200);
             echo json_encode([
                 'status' => 'success',
                 'message' => 'Login successful. Access token set in cookie.',
-                // Optionally send some non-sensitive user info
-                // 'data' => [ 'user' => ['email' => $validatedData['email'] ] ] // Example
             ]);
         } catch (ValidationException $e) {
             http_response_code(400);

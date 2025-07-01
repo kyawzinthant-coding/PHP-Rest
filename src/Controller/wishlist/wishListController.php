@@ -40,20 +40,23 @@ class WishlistController
 
         // 3. Perform the toggle logic
         $isWishlisted = $this->wishlistRepository->find($user->id, $productId);
+        $newStatus = false;
 
         if ($isWishlisted) {
             // Item exists, so remove it
             $this->wishlistRepository->remove($user->id, $productId);
             $message = 'Product removed from wishlist.';
+            $newStatus = false;
         } else {
             // Item does not exist, so add it
             $this->wishlistRepository->add($user->id, $productId);
             $message = 'Product added to wishlist.';
+            $newStatus = true;
         }
 
         // 4. Send a success response
         http_response_code(200);
-        echo json_encode(['status' => 'success', 'message' => $message]);
+        echo json_encode(['status' => 'success', 'message' => $message, 'isWishlisted' => $newStatus]);
     }
 
     /**
@@ -68,7 +71,18 @@ class WishlistController
             return;
         }
 
+
+
         $wishlistItems = $this->wishlistRepository->findByUser($user->id);
+
+        if ($user && !empty($wishlistItems)) {
+            $wishlistRepo = new \App\Repository\Wishlist\WishlistRepository();
+            $wishlistedIds = $wishlistRepo->findWishlistedProductIds($user->id);
+
+            foreach ($wishlistItems as &$product) { // Use "&" to modify the array directly
+                $product['isWishlisted'] = in_array($product['id'], $wishlistedIds);
+            }
+        }
 
         // Add the full image URL to each product
         $transformedItems = ImageUrlHelper::transformItemsWithImageUrls($wishlistItems, 'cloudinary_public_id');

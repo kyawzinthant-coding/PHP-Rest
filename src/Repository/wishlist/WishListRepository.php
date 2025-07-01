@@ -60,11 +60,24 @@ class WishlistRepository
     public function findByUser(string $userId): array
     {
         $stmt = $this->db->prepare("
-            SELECT p.* FROM Wishlists w
+            SELECT
+                p.*,
+                b.name AS brand_name,
+                c.name AS category_name
+            FROM Wishlists w
             JOIN Products p ON w.product_id = p.id
+            LEFT JOIN Brands b ON p.brand_id = b.id
+            LEFT JOIN Categories c ON p.category_id = c.id
             WHERE w.user_id = :user_id AND p.is_active = 1
         ");
         $stmt->execute([':user_id' => $userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function findWishlistedProductIds(string $userId): array
+    {
+        $stmt = $this->db->prepare("SELECT product_id FROM Wishlists WHERE user_id = :user_id");
+        $stmt->execute([':user_id' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 }

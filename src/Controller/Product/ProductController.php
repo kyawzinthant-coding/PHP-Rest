@@ -85,10 +85,19 @@ class ProductController
                 $filters['brandId'] = $request->get['brandId'];
             }
 
-            $products = $this->productRepository->GetALlProduct($filters); // Use the new repository method
+            $products = $this->productRepository->GetALlProduct($filters);
 
-            // Your response for empty products was a 200 with status "error"
-            // It's generally better to return 200 with status "success" and an empty data array.
+            $user = $request->getAttribute('user');
+            if ($user && !empty($products)) {
+                $wishlistRepo = new \App\Repository\Wishlist\WishlistRepository();
+                $wishlistedIds = $wishlistRepo->findWishlistedProductIds($user->id);
+
+                foreach ($products as &$product) { // Use "&" to modify the array directly
+                    $product['isWishlisted'] = in_array($product['id'], $wishlistedIds);
+                }
+            }
+
+
             if (empty($products)) {
                 http_response_code(200);
                 echo json_encode([
@@ -178,7 +187,7 @@ class ProductController
         }
     }
 
-    public function GetProductById(string $id): void
+    public function GetProductById(Request $request, string $id): void
     {
         try {
             $product = $this->productRepository->findById($id);
@@ -192,7 +201,15 @@ class ProductController
                 return;
             }
 
+
             $product['image_url'] = ImageUrlHelper::generateUrl($product['cloudinary_public_id']);
+
+
+            $user = $request->getAttribute('user');
+            if ($user) {
+                $wishlistRepo = new \App\Repository\Wishlist\WishlistRepository();
+                $product['isWishlisted'] = $wishlistRepo->find($user->id, $id) !== null;
+            }
 
             echo json_encode([
                 'status' => 'success',
@@ -207,8 +224,8 @@ class ProductController
 
     public function update(Request $request, string $id): void
     {
-        $newlyUploadedCloudinaryPublicId = null; // To track if a new image was uploaded in this request
-        $oldImageToDeleteOnSuccess = null;    // To track if an old image should be deleted after DB success
+        $newlyUploadedCloudinaryPublicId = null;
+        $oldImageToDeleteOnSuccess = null;
 
         $tools = new Tools();
         try {
