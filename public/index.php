@@ -13,6 +13,8 @@ use App\Controller\Product\ProductController;
 use App\Exception\ValidationException;
 use App\Middleware\AuthMiddleware;
 use App\Controller\Brand\BrandController;
+use App\Controller\Discount\DiscountController;
+use App\Controller\Order\OrderController;
 use App\Controller\Review\ReviewController;
 use App\Repository\DuplicateEntryException;
 use App\Controller\Wishlist\WishlistController;
@@ -89,6 +91,26 @@ $router->post('/api/v1/wishlist/{productId}', [WishlistController::class, 'toggl
 // Review routes
 $router->get('/api/v1/products/{productId}/reviews', [ReviewController::class, 'getReviewsForProduct']);
 $router->post('/api/v1/products/{productId}/reviews', [ReviewController::class, 'create'], [AuthMiddleware::class]);
+
+// Discount 
+$router->get('/api/v1/admin/discounts', [DiscountController::class, 'index'], [AuthMiddleware::class]);
+$router->post('/api/v1/admin/discounts', [DiscountController::class, 'create'], [AuthMiddleware::class]);
+$router->get('/api/v1/admin/discounts/{id}', [DiscountController::class, 'getById'], [AuthMiddleware::class]);
+$router->put('/api/v1/admin/discounts/{id}', [DiscountController::class, 'update'], [AuthMiddleware::class]);
+$router->delete('/api/v1/admin/discounts/{id}', [DiscountController::class, 'delete'], [AuthMiddleware::class]);
+
+$router->post('/api/v1/discounts/apply', [DiscountController::class, 'apply']);
+
+
+
+//order
+
+$router->post('/api/v1/orders', [OrderController::class, 'create'], [AuthMiddleware::class]);
+
+
+$router->get('/api/v1/orders', [OrderController::class, 'getOrders'], [AuthMiddleware::class]);
+$router->get('/api/v1/orders/{id}', [OrderController::class, 'getOrderById'], [AuthMiddleware::class]);
+$router->put('/api/v1/admin/orders/{id}/status', [OrderController::class, 'updateStatus'], [AuthMiddleware::class]); // Admin-specific endpoint
 
 $requestUri = $_SERVER['REQUEST_URI'];
 $requestMethod = $_SERVER['REQUEST_METHOD'];
