@@ -9,6 +9,7 @@ use App\Exception\ValidationException;
 use App\Exception\AuthenticationException;
 use App\Repository\DuplicateEntryException;
 use App\Repository\User\UserRepository;
+use App\Validate\ProfileValidate;
 
 class AuthController
 {
@@ -154,5 +155,40 @@ class AuthController
                 'role' => $fullUserDetails['role'] ?? 'user',
             ]
         ]);
+    }
+
+    public function updateProfile(Request $request): void
+    {
+        $user = $request->getAttribute('user');
+        if (!$user) {
+            http_response_code(401);
+            echo json_encode(['status' => 'error', 'message' => 'Unauthorized.']);
+            return;
+        }
+
+        try {
+            $validator = new ProfileValidate();
+            $validatedData = $validator->validate();
+
+            if (empty($validatedData)) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => 'No fields provided for update.']);
+                return;
+            }
+
+            $success = $this->authService->updateProfile($user->id, $validatedData);
+
+            if ($success) {
+                echo json_encode(['status' => 'success', 'message' => 'Profile updated successfully.']);
+            } else {
+                throw new \RuntimeException('Failed to update profile.');
+            }
+        } catch (\App\Exception\ValidationException $e) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Validation failed.', 'errors' => $e->getErrors()]);
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        }
     }
 }

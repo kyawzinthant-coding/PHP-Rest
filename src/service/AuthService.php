@@ -83,6 +83,16 @@ class AuthService
 
         return JWT::encode($payload, $jwtSecretKey, 'HS256');
     }
+
+    public function updateProfile(string $userId, array $data): bool
+    {
+        // If a new password is part of the update, hash it before saving.
+        if (isset($data['password'])) {
+            $data['password'] = password_hash($data['password'], PASSWORD_ARGON2ID);
+        }
+
+        return $this->userRepository->update($userId, $data);
+    }
 }
 
 // Define a custom AuthenticationException if you don't have one

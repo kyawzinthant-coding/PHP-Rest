@@ -16,6 +16,7 @@ use App\Controller\Brand\BrandController;
 use App\Controller\Discount\DiscountController;
 use App\Controller\Order\OrderController;
 use App\Controller\Review\ReviewController;
+use App\Controller\User\UserController;
 use App\Repository\DuplicateEntryException;
 use App\Controller\Wishlist\WishlistController;
 use App\Middleware\OptionalAuthMiddleware;
@@ -67,6 +68,7 @@ $router->post('/api/v1/auth/logout', [AuthController::class, 'logout']); // Add 
 
 // Route to get current user info (requires authentication)
 $router->get('/api/v1/auth/me', [AuthController::class, 'getCurrentUser'], [AuthMiddleware::class]);
+$router->put('/api/v1/auth/me', [AuthController::class, 'updateProfile'], [AuthMiddleware::class]);
 
 // Category routes
 $router->get('/api/v1/category', [CategoryController::class, 'index'],);
@@ -103,14 +105,17 @@ $router->post('/api/v1/discounts/apply', [DiscountController::class, 'apply']);
 
 
 
-//order
+//order management
 
 $router->post('/api/v1/orders', [OrderController::class, 'create'], [AuthMiddleware::class]);
-
-
 $router->get('/api/v1/orders', [OrderController::class, 'getOrders'], [AuthMiddleware::class]);
 $router->get('/api/v1/orders/{id}', [OrderController::class, 'getOrderById'], [AuthMiddleware::class]);
 $router->put('/api/v1/admin/orders/{id}/status', [OrderController::class, 'updateStatus'], [AuthMiddleware::class]); // Admin-specific endpoint
+
+
+// user management
+$router->get('/api/v1/admin/users', [UserController::class, 'index'], [AuthMiddleware::class]);
+$router->put('/api/v1/admin/users/{id}/role', [UserController::class, 'updateUserRole'], [AuthMiddleware::class]);
 
 $requestUri = $_SERVER['REQUEST_URI'];
 $requestMethod = $_SERVER['REQUEST_METHOD'];

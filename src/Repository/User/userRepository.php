@@ -15,6 +15,50 @@ class UserRepository
         $this->db = Database::getInstance();
     }
 
+    public function update(string $userId, array $data): bool
+    {
+        if (empty($data)) {
+            return false;
+        }
+
+        $fields = [];
+        $params = ['id' => $userId];
+        foreach ($data as $key => $value) {
+            // Whitelist of updatable columns to prevent unwanted updates
+            if (in_array($key, ['name', 'password'])) {
+                $fields[] = "`$key` = :$key";
+                $params[$key] = $value;
+            }
+        }
+
+        if (empty($fields)) {
+            return false; // No valid fields to update
+        }
+
+        $sql = "UPDATE Users SET " . implode(', ', $fields) . " WHERE id = :id";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute($params);
+        } catch (\PDOException $e) {
+            error_log("Failed to update user: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function findAll(): array
+    {
+        $stmt = $this->db->prepare("SELECT id, name, email, role, created_at FROM Users ORDER BY created_at DESC");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function updateRole(string $userId, string $newRole): bool
+    {
+        $stmt = $this->db->prepare("UPDATE Users SET role = :role WHERE id = :id");
+        return $stmt->execute([':role' => $newRole, ':id' => $userId]);
+    }
+
     public function findByEmail(string $email): ?array
     {
         try {
