@@ -71,8 +71,7 @@ class ProductController
 
 
 
-
-    public function index(Request $request): void // Expect the Request object
+    public function index(Request $request): void
     {
         try {
             $filters = [];
@@ -131,6 +130,40 @@ class ProductController
                 'status' => 'error',
                 'message' => 'An unexpected error occurred while retrieving products.'
             ]);
+        }
+    }
+
+
+    public function getDiscountedProducts(Request $request): void
+    {
+        try {
+
+            $products = $this->productRepository->findDiscountedProducts();
+
+            echo ("hello");
+
+
+            $user = $request->getAttribute('user');
+            if ($user && !empty($products)) {
+                $wishlistRepo = new \App\Repository\Wishlist\WishlistRepository();
+                $wishlistedIds = $wishlistRepo->findWishlistedProductIds($user->id);
+
+                foreach ($products as &$product) {
+                    $product['isWishlisted'] = in_array($product['id'], $wishlistedIds);
+                }
+            }
+
+            $transformedProducts = ImageUrlHelper::transformItemsWithImageUrls($products, 'cloudinary_public_id');
+
+            echo json_encode([
+                'status' => 'success',
+                'message' => 'Discounted products retrieved successfully.',
+                'length' => count($transformedProducts),
+                'data' => $transformedProducts
+            ]);
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'An error occurred while fetching discounted products.']);
         }
     }
 
@@ -193,7 +226,7 @@ class ProductController
             $product = $this->productRepository->findById($id);
 
             if (!$product) {
-                http_response_code(200);
+                http_response_code(400);
                 echo json_encode([
                     'status' => 'error',
                     'message' => 'Product not found.'

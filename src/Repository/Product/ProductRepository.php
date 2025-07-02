@@ -19,6 +19,33 @@ class ProductRepository
         $this->db = Database::getInstance();
     }
 
+    public function findDiscountedProducts(): array
+    {
+        $sql = "
+            SELECT 
+                p.*,
+                d.code as discount_code,
+                d.discount_type,
+                d.value as discount_value
+            FROM Products p
+            JOIN ProductDiscounts pd ON p.id = pd.product_id
+            JOIN Discounts d ON pd.discount_id = d.id
+            WHERE p.is_active = 1
+              AND d.is_active = 1
+              AND (d.start_date IS NULL OR d.start_date <= NOW())
+              AND (d.end_date IS NULL OR d.end_date >= NOW())
+        ";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\PDOException $e) {
+            error_log("Could not retrieve discounted products: " . $e->getMessage());
+            return [];
+        }
+    }
+
 
     public function GetAllProduct(array $filters = []): array
     {

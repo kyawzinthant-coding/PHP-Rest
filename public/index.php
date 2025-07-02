@@ -51,6 +51,7 @@ $router->get('/', function () {
 // product controller
 $router->get('/api/v1/products',  [ProductController::class, 'index'], [OptionalAuthMiddleware::class]);
 $router->post('/api/v1/products', [ProductController::class, 'store']);
+$router->get('/api/v1/products/discounted', [ProductController::class, 'getDiscountedProducts'], [OptionalAuthMiddleware::class]);
 $router->get('/api/v1/products/{id}', [ProductController::class, 'GetProductById'], [OptionalAuthMiddleware::class]);
 $router->post('/api/v1/products/{id}', [ProductController::class, 'update']);
 $router->delete('/api/v1/products/{id}', [ProductController::class, 'destroy']);
