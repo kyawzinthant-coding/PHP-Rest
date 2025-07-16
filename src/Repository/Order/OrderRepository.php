@@ -30,7 +30,27 @@ class OrderRepository
 
     public function findByUser(string $userId): array
     {
-        $stmt = $this->db->prepare("SELECT * FROM Orders WHERE user_id = :user_id ORDER BY created_at DESC");
+        $sql = "
+        WITH OrderFirstItem AS (
+            SELECT
+                oi.order_id,
+                p.name as first_item_name,
+                p.cloudinary_public_id as first_item_image_id,
+                ROW_NUMBER() OVER(PARTITION BY oi.order_id ORDER BY oi.id) as rn
+            FROM OrderItems oi
+            JOIN Products p ON oi.product_id = p.id
+        )
+        SELECT 
+            o.*,
+            ofi.first_item_name,
+            ofi.first_item_image_id
+        FROM Orders o
+        JOIN OrderFirstItem ofi ON o.id = ofi.order_id
+        WHERE o.user_id = :user_id AND ofi.rn = 1
+        ORDER BY o.created_at DESC
+    ";
+
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([':user_id' => $userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -48,7 +68,7 @@ class OrderRepository
 
         // 2. Get the order items (line items)
         $itemsStmt = $this->db->prepare("
-            SELECT oi.*, p.name as product_name 
+            SELECT oi.*, p.name as product_name , p.cloudinary_public_id
             FROM OrderItems oi
             JOIN Products p ON oi.product_id = p.id
             WHERE oi.order_id = :order_id

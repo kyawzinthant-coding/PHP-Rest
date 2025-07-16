@@ -34,6 +34,7 @@ class ComposerStaticInitad31663af77d1381d86b6fde94516956
             'Psr\\Http\\Message\\' => 17,
             'Psr\\Http\\Client\\' => 16,
             'PhpOption\\' => 10,
+            'PHPMailer\\PHPMailer\\' => 20,
         ),
         'M' => 
         array (
@@ -102,6 +103,10 @@ class ComposerStaticInitad31663af77d1381d86b6fde94516956
         array (
             0 => __DIR__ . '/..' . '/phpoption/phpoption/src/PhpOption',
         ),
+        'PHPMailer\\PHPMailer\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
+        ),
         'Monolog\\' => 
         array (
             0 => __DIR__ . '/..' . '/monolog/monolog/src/Monolog',
@@ -144,7 +149,11 @@ class ComposerStaticInitad31663af77d1381d86b6fde94516956
         'App\\Controller\\Auth\\AuthController' => __DIR__ . '/../..' . '/src/Controller/Auth/AuthController.php',
         'App\\Controller\\Brand\\BrandController' => __DIR__ . '/../..' . '/src/Controller/Brand/BrandController.php',
         'App\\Controller\\Category\\CategoryController' => __DIR__ . '/../..' . '/src/Controller/Category/CategoryController.php',
+        'App\\Controller\\Discount\\DiscountController' => __DIR__ . '/../..' . '/src/Controller/Discount/DiscountController.php',
+        'App\\Controller\\Order\\OrderController' => __DIR__ . '/../..' . '/src/Controller/Order/OrderController.php',
         'App\\Controller\\Product\\ProductController' => __DIR__ . '/../..' . '/src/Controller/Product/ProductController.php',
+        'App\\Controller\\Review\\ReviewController' => __DIR__ . '/../..' . '/src/Controller/Review/ReviewController.php',
+        'App\\Controller\\User\\UserController' => __DIR__ . '/../..' . '/src/Controller/User/UserController.php',
         'App\\Core\\Database' => __DIR__ . '/../..' . '/src/Core/Database.php',
         'App\\Core\\Request' => __DIR__ . '/../..' . '/src/Core/Request.php',
         'App\\Core\\Router' => __DIR__ . '/../..' . '/src/Core/Router.php',
@@ -152,12 +161,16 @@ class ComposerStaticInitad31663af77d1381d86b6fde94516956
         'App\\Repository\\Brand\\BrandRepository' => __DIR__ . '/../..' . '/src/Repository/Brand/BrandRepository.php',
         'App\\Repository\\Category\\CategoryRepository' => __DIR__ . '/../..' . '/src/Repository/Category/CategoryRepository.php',
         'App\\Repository\\DuplicateEntryException' => __DIR__ . '/../..' . '/src/Repository/DuplicateEntryException.php',
+        'App\\Repository\\Order\\OrderRepository' => __DIR__ . '/../..' . '/src/Repository/Order/OrderRepository.php',
         'App\\Repository\\Product\\ProductRepository' => __DIR__ . '/../..' . '/src/Repository/Product/ProductRepository.php',
+        'App\\Repository\\Review\\ReviewRepository' => __DIR__ . '/../..' . '/src/Repository/Review/ReviewRepository.php',
         'App\\Validate\\AuthValidation' => __DIR__ . '/../..' . '/src/Validate/AuthValidation.php',
         'App\\Validate\\BaseRequest' => __DIR__ . '/../..' . '/src/Validate/BaseRequest.php',
         'App\\Validate\\BrandValidation' => __DIR__ . '/../..' . '/src/Validate/BrandValidation.php',
         'App\\Validate\\CategoryValidate' => __DIR__ . '/../..' . '/src/Validate/CategoryValidate.php',
         'App\\Validate\\ProductValidate' => __DIR__ . '/../..' . '/src/Validate/ProductValidate.php',
+        'App\\Validate\\ProfileValidate' => __DIR__ . '/../..' . '/src/Validate/ProfileValidate.php',
+        'App\\Validate\\ReviewValidate' => __DIR__ . '/../..' . '/src/Validate/ReviewValidate.php',
         'App\\utils\\Tools' => __DIR__ . '/../..' . '/src/utils/Tools.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'Brick\\Math\\BigDecimal' => __DIR__ . '/..' . '/brick/math/src/BigDecimal.php',
@@ -1081,6 +1094,13 @@ class ComposerStaticInitad31663af77d1381d86b6fde94516956
         'Monolog\\Test\\MonologTestCase' => __DIR__ . '/..' . '/monolog/monolog/src/Monolog/Test/MonologTestCase.php',
         'Monolog\\Test\\TestCase' => __DIR__ . '/..' . '/monolog/monolog/src/Monolog/Test/TestCase.php',
         'Monolog\\Utils' => __DIR__ . '/..' . '/monolog/monolog/src/Monolog/Utils.php',
+        'PHPMailer\\PHPMailer\\DSNConfigurator' => __DIR__ . '/..' . '/phpmailer/phpmailer/src/DSNConfigurator.php',
+        'PHPMailer\\PHPMailer\\Exception' => __DIR__ . '/..' . '/phpmailer/phpmailer/src/Exception.php',
+        'PHPMailer\\PHPMailer\\OAuth' => __DIR__ . '/..' . '/phpmailer/phpmailer/src/OAuth.php',
+        'PHPMailer\\PHPMailer\\OAuthTokenProvider' => __DIR__ . '/..' . '/phpmailer/phpmailer/src/OAuthTokenProvider.php',
+        'PHPMailer\\PHPMailer\\PHPMailer' => __DIR__ . '/..' . '/phpmailer/phpmailer/src/PHPMailer.php',
+        'PHPMailer\\PHPMailer\\POP3' => __DIR__ . '/..' . '/phpmailer/phpmailer/src/POP3.php',
+        'PHPMailer\\PHPMailer\\SMTP' => __DIR__ . '/..' . '/phpmailer/phpmailer/src/SMTP.php',
         'PhpOption\\LazyOption' => __DIR__ . '/..' . '/phpoption/phpoption/src/PhpOption/LazyOption.php',
         'PhpOption\\None' => __DIR__ . '/..' . '/phpoption/phpoption/src/PhpOption/None.php',
         'PhpOption\\Option' => __DIR__ . '/..' . '/phpoption/phpoption/src/PhpOption/Option.php',

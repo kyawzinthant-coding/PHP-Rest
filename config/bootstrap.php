@@ -39,6 +39,15 @@ define('CLOUDINARY_API_SECRET', $_ENV['CLOUDINARY_API_SECRET']);
 
 define('CLOUDINARY_URL', 'cloudinary://245584398211485:9HJk9CnXB68ld-T8Tsp-z38Dbqk@df3jn4uqd');
 
+
+// Email Configuration
+define('SMTP_HOST', $_ENV['SMTP_HOST'] ?? '');
+define('SMTP_PORT', $_ENV['SMTP_PORT'] ?? 587);
+define('SMTP_USERNAME', $_ENV['SMTP_USERNAME'] ?? '');
+define('SMTP_PASSWORD', $_ENV['SMTP_PASSWORD'] ?? '');
+define('SMTP_FROM_EMAIL', $_ENV['SMTP_FROM_EMAIL'] ?? '');
+define('SMTP_FROM_NAME', $_ENV['SMTP_FROM_NAME'] ?? 'Your App');
+
 // Helper function for dumping variables (like console.log)
 if (!function_exists('dd')) {
     function dd(...$vars)

@@ -53,12 +53,8 @@ class DiscountController
         echo json_encode(['status' => 'success', 'message' => 'Discount deactivated successfully.']);
     }
 
-    /**
-     * ADMIN-ONLY: Creates a new discount and links it to products.
-     */
     public function create(Request $request): void
     {
-        // Note: In a real app, you would add logic to check if the user has an 'admin' role.
 
         $data = json_decode($request->body, true);
 

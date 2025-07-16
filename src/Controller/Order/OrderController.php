@@ -6,6 +6,7 @@ use App\Core\Request;
 use App\Repository\Order\OrderRepository;
 use App\Repository\Product\ProductRepository;
 use App\Repository\Discount\DiscountRepository;
+use App\Service\EmailService;
 
 class OrderController
 {
@@ -40,6 +41,10 @@ class OrderController
             $orders = $this->orderRepository->findAll();
         } else {
             $orders = $this->orderRepository->findByUser($user->id);
+
+            foreach ($orders as &$order) {
+                $order['first_item_image_url'] = \App\Utils\ImageUrlHelper::generateUrl($order['first_item_image_id']);
+            }
         }
 
         echo json_encode(['status' => 'success', 'data' => $orders]);
@@ -67,6 +72,12 @@ class OrderController
             http_response_code(403); // Forbidden
             echo json_encode(['status' => 'error', 'message' => 'You are not authorized to view this order.']);
             return;
+        }
+
+        if (!empty($order['items'])) {
+            foreach ($order['items'] as &$item) { // Use "&" to modify in place
+                $item['image_url'] = \App\Utils\ImageUrlHelper::generateUrl($item['cloudinary_public_id']);
+            }
         }
 
         echo json_encode(['status' => 'success', 'data' => $order]);
@@ -173,6 +184,17 @@ class OrderController
             ];
 
             $newOrderId = $this->orderRepository->create($orderData);
+
+            $emailService = new EmailService();
+            $emailService->sendOrderConfirmation(
+                $shippingDetails['email'],
+                $shippingDetails['name'],
+                [
+                    'orderNumber' => 'ORD-' . substr($newOrderId, 0, 8), // Just an example
+                    'items' => $verifiedItems,
+                    'totalAmount' => $finalTotal
+                ]
+            );
 
             // 6. Respond with success
             http_response_code(201);
