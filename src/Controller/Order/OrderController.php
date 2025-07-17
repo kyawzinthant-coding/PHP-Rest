@@ -41,11 +41,12 @@ class OrderController
             $orders = $this->orderRepository->findAll();
         } else {
             $orders = $this->orderRepository->findByUser($user->id);
-
             foreach ($orders as &$order) {
                 $order['first_item_image_url'] = \App\Utils\ImageUrlHelper::generateUrl($order['first_item_image_id']);
             }
         }
+
+
 
         echo json_encode(['status' => 'success', 'data' => $orders]);
     }

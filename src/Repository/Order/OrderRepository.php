@@ -15,15 +15,34 @@ class OrderRepository
         $this->db = Database::getInstance();
     }
 
-    /**
-     * Creates a new order using a database transaction.
-     * This ensures that all parts of the order are created successfully,
-     * or none of them are.
-     */
 
     public function findAll(): array
     {
-        $stmt = $this->db->prepare("SELECT * FROM Orders ORDER BY created_at DESC");
+        $sql = "
+            WITH OrderFirstItem AS (
+                SELECT
+                    oi.order_id,
+                    ROW_NUMBER() OVER(PARTITION BY oi.order_id ORDER BY oi.id) as rn
+                FROM OrderItems oi
+                JOIN Products p ON oi.product_id = p.id
+            ),
+            OrderTotalItems AS (
+                SELECT 
+                    order_id, 
+                    SUM(quantity) as total_items 
+                FROM OrderItems 
+                GROUP BY order_id
+            )
+            SELECT 
+                o.*,
+                oti.total_items
+            FROM Orders o
+            LEFT JOIN OrderFirstItem ofi ON o.id = ofi.order_id AND ofi.rn = 1
+            LEFT JOIN OrderTotalItems oti ON o.id = oti.order_id
+            ORDER BY o.created_at DESC
+        ";
+
+        $stmt = $this->db->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
