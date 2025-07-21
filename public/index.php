@@ -23,7 +23,8 @@ use App\Middleware\OptionalAuthMiddleware;
 
 $allowed_origins = [
     'http://localhost:5173',
-    'http://localhost:5174'
+    'http://localhost:5174',
+    'http://localhost:5177'
 ];
 
 if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowed_origins)) {
@@ -103,8 +104,6 @@ $router->delete('/api/v1/admin/discounts/{id}', [DiscountController::class, 'del
 
 $router->post('/api/v1/discounts/apply', [DiscountController::class, 'apply']);
 
-
-
 //order management
 
 $router->post('/api/v1/orders', [OrderController::class, 'create'], [AuthMiddleware::class]);
@@ -116,6 +115,7 @@ $router->put('/api/v1/admin/orders/{id}/status', [OrderController::class, 'updat
 // user management
 $router->get('/api/v1/admin/users', [UserController::class, 'index'], [AuthMiddleware::class]);
 $router->put('/api/v1/admin/users/{id}/role', [UserController::class, 'updateUserRole'], [AuthMiddleware::class]);
+$router->delete('/api/v1/admin/users/{id}', [UserController::class, 'disableUser'], [AuthMiddleware::class]);
 
 $requestUri = $_SERVER['REQUEST_URI'];
 $requestMethod = $_SERVER['REQUEST_METHOD'];

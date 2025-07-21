@@ -48,7 +48,7 @@ class UserRepository
 
     public function findAll(): array
     {
-        $stmt = $this->db->prepare("SELECT id, name, email, role, created_at FROM Users ORDER BY created_at DESC");
+        $stmt = $this->db->prepare("SELECT id, name, email, role,is_active, created_at FROM Users ORDER BY created_at DESC");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -57,6 +57,12 @@ class UserRepository
     {
         $stmt = $this->db->prepare("UPDATE Users SET role = :role WHERE id = :id");
         return $stmt->execute([':role' => $newRole, ':id' => $userId]);
+    }
+
+    public function disable(string $userId): bool
+    {
+        $stmt = $this->db->prepare("UPDATE Users SET is_active = 0 WHERE id = :id");
+        return $stmt->execute([':id' => $userId]);
     }
 
     public function findByEmail(string $email): ?array

@@ -45,7 +45,8 @@ class BrandController
                 http_response_code(200);
                 echo json_encode([
                     'status' => 'error',
-                    'message' => 'No brands found.'
+                    'message' => 'No brands found.',
+                    'data' => []
                 ]);
                 return;
             }

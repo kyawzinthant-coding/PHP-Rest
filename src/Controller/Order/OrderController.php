@@ -87,6 +87,7 @@ class OrderController
     public function updateStatus(Request $request, string $id): void
     {
         $user = $request->getAttribute('user');
+
         if (!$user || $user->role !== 'admin') {
             http_response_code(403);
             echo json_encode(['status' => 'error', 'message' => 'Forbidden: Admins only.']);

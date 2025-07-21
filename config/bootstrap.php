@@ -39,6 +39,8 @@ define('CLOUDINARY_API_SECRET', $_ENV['CLOUDINARY_API_SECRET']);
 
 define('CLOUDINARY_URL', 'cloudinary://245584398211485:9HJk9CnXB68ld-T8Tsp-z38Dbqk@df3jn4uqd');
 
+define('SUPER_USER_EMAIL', $_ENV['SUPER_USER_EMAIL'] ?? '');
+
 
 // Email Configuration
 define('SMTP_HOST', $_ENV['SMTP_HOST'] ?? '');

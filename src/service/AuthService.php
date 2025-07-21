@@ -37,11 +37,11 @@ class AuthService
     {
         $user = $this->userRepository->findByEmail($data['email']);
 
-        if (!$user) {
-            throw new AuthenticationException("Invalid email or password.");
+        if ($user && !$user['is_active']) {
+            throw new AuthenticationException("Your account has been disabled.");
         }
 
-        if (!password_verify($data['password'], $user['password'])) {
+        if (!$user || !password_verify($data['password'], $user['password'])) {
             throw new AuthenticationException("Invalid email or password.");
         }
 

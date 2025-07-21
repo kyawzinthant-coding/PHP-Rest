@@ -17,9 +17,6 @@ class UserController
 
 
 
-    /**
-     * ADMIN-ONLY: Gets a list of all users.
-     */
     public function index(Request $request): void
     {
         $user = $request->getAttribute('user');
@@ -63,6 +60,19 @@ class UserController
             return;
         }
 
+        $targetUser = $this->userRepository->findById($id);
+        if (!$targetUser) {
+            http_response_code(404);
+            echo json_encode(['status' => 'error', 'message' => 'User not found.']);
+            return;
+        }
+
+        if ($targetUser['email'] === getenv('SUPER_USER_EMAIL')) {
+            http_response_code(403);
+            echo json_encode(['status' => 'error', 'message' => 'The super user role cannot be changed.']);
+            return;
+        }
+
         $success = $this->userRepository->updateRole($id, $newRole);
 
         if ($success) {
@@ -71,5 +81,37 @@ class UserController
             http_response_code(500);
             echo json_encode(['status' => 'error', 'message' => 'Failed to update user role.']);
         }
+    }
+
+    public function disableUser(Request $request, string $id): void
+    {
+        $adminUser = $request->getAttribute('user');
+        if (!$adminUser || $adminUser->role !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['status' => 'error', 'message' => 'Forbidden: Admins only.']);
+            return;
+        }
+
+        $targetUser = $this->userRepository->findById($id);
+        if (!$targetUser) {
+            http_response_code(404);
+            echo json_encode(['status' => 'error', 'message' => 'User not found.']);
+            return;
+        }
+
+        if ($targetUser['email'] === getenv('SUPER_USER_EMAIL')) {
+            http_response_code(403);
+            echo json_encode(['status' => 'error', 'message' => 'The super user cannot be disabled.']);
+            return;
+        }
+        if ($adminUser->id === $id) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'You cannot disable your own account.']);
+            return;
+        }
+
+
+        $this->userRepository->disable($id);
+        echo json_encode(['status' => 'success', 'message' => 'User disabled successfully.']);
     }
 }
