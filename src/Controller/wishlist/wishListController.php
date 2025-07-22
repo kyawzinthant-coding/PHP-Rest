@@ -42,6 +42,8 @@ class WishlistController
         $isWishlisted = $this->wishlistRepository->find($user->id, $productId);
         $newStatus = false;
 
+        error_log("User with ID {$user->id} is toggling wishlist for product ID {$productId}. Wishlist status: " . ($isWishlisted ? 'exists' : 'does not exist'));
+        printf("User with ID %s is toggling wishlist for product ID %s. Wishlist status: %s\n", $user->id, $productId, $isWishlisted ? 'exists' : 'does not exist');
         if ($isWishlisted) {
             // Item exists, so remove it
             $this->wishlistRepository->remove($user->id, $productId);

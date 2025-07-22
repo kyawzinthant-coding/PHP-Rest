@@ -11,8 +11,9 @@ class AuthMiddleware
 {
     public function handle(Request $request, callable $next)
     {
-        // Read the token from the cookie
+
         $token = $_COOKIE['accessToken'] ?? null;
+
 
         if (!$token) {
             http_response_code(401);
@@ -27,7 +28,6 @@ class AuthMiddleware
             $request->setAttribute('user', $decoded->data); // Store decoded user data
         } catch (Exception $e) {
             http_response_code(401);
-            // It's good practice to also clear the invalid cookie here
             setcookie('accessToken', '', [
                 'expires' => time() - 3600,
                 'path' => '/',

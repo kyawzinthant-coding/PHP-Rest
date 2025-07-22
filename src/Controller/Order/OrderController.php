@@ -37,16 +37,41 @@ class OrderController
             return;
         }
 
-        if ($user->role === 'admin') {
-            $orders = $this->orderRepository->findAll();
-        } else {
-            $orders = $this->orderRepository->findByUser($user->id);
-            foreach ($orders as &$order) {
-                $order['first_item_image_url'] = \App\Utils\ImageUrlHelper::generateUrl($order['first_item_image_id']);
-            }
+        error_log("User with ID {$user->id} is fetching their orders.");
+
+
+        $orders = $this->orderRepository->findAll();
+
+        if (empty($orders)) {
+            http_response_code(200);
+            echo json_encode(['status' => 'error', 'message' => 'No orders found.', 'data' => []]);
+            return;
         }
 
+        echo json_encode(['status' => 'success', 'data' => $orders]);
+    }
 
+    public function getCustomerOrders(Request $request): void
+    {
+        $user = $request->getAttribute('user');
+
+        if (!$user) {
+            http_response_code(401);
+            echo json_encode(['status' => 'error', 'message' => 'Unauthorized.']);
+            return;
+        }
+
+        $orders = $this->orderRepository->findByUser($user->id);
+
+        if (empty($orders)) {
+            http_response_code(404);
+            echo json_encode(['status' => 'error', 'message' => 'No orders found for this user.']);
+            return;
+        }
+
+        foreach ($orders as &$order) {
+            $order['first_item_image_url'] = \App\Utils\ImageUrlHelper::generateUrl($order['first_item_image_id']);
+        }
 
         echo json_encode(['status' => 'success', 'data' => $orders]);
     }
@@ -187,16 +212,16 @@ class OrderController
 
             $newOrderId = $this->orderRepository->create($orderData);
 
-            $emailService = new EmailService();
-            $emailService->sendOrderConfirmation(
-                $shippingDetails['email'],
-                $shippingDetails['name'],
-                [
-                    'orderNumber' => 'ORD-' . substr($newOrderId, 0, 8), // Just an example
-                    'items' => $verifiedItems,
-                    'totalAmount' => $finalTotal
-                ]
-            );
+            // $emailService = new EmailService();
+            // $emailService->sendOrderConfirmation(
+            //     $shippingDetails['email'],
+            //     $shippingDetails['name'],
+            //     [
+            //         'orderNumber' => 'ORD-' . substr($newOrderId, 0, 8), // Just an example
+            //         'items' => $verifiedItems,
+            //         'totalAmount' => $finalTotal
+            //     ]
+            // );
 
             // 6. Respond with success
             http_response_code(201);

@@ -1,5 +1,8 @@
 <?php
 
+
+error_log("<<<<< A REQUEST WAS RECEIVED AT " . date("H:i:s") . " >>>>>");
+
 // 1. Load Composer's autoloader
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -19,7 +22,9 @@ use App\Controller\Review\ReviewController;
 use App\Controller\User\UserController;
 use App\Repository\DuplicateEntryException;
 use App\Controller\Wishlist\WishlistController;
+use App\Middleware\AdminAuthMiddleware;
 use App\Middleware\OptionalAuthMiddleware;
+use App\Middleware\UnifiedAuthMiddleware;
 
 $allowed_origins = [
     'http://localhost:5173',
@@ -65,7 +70,10 @@ $router->get('/api/v1/products/categoryId/{id}', [ProductController::class, 'get
 // Auth routes
 $router->post('/api/v1/auth/register', [AuthController::class, 'register']);
 $router->post('/api/v1/auth/login', [AuthController::class, 'login']);
-$router->post('/api/v1/auth/logout', [AuthController::class, 'logout']); // Add logout route
+$router->post('/api/v1/auth/logout', [AuthController::class, 'logout']);
+$router->post('/api/v1/auth/admin/login', [AuthController::class, 'adminLogin']);
+
+$router->get('/api/v1/admin/me', [AuthController::class, 'getCurrentAdmin'], [AdminAuthMiddleware::class]);
 
 // Route to get current user info (requires authentication)
 $router->get('/api/v1/auth/me', [AuthController::class, 'getCurrentUser'], [AuthMiddleware::class]);
@@ -96,26 +104,26 @@ $router->get('/api/v1/products/{productId}/reviews', [ReviewController::class, '
 $router->post('/api/v1/products/{productId}/reviews', [ReviewController::class, 'create'], [AuthMiddleware::class]);
 
 // Discount 
-$router->get('/api/v1/admin/discounts', [DiscountController::class, 'index'], [AuthMiddleware::class]);
-$router->post('/api/v1/admin/discounts', [DiscountController::class, 'create'], [AuthMiddleware::class]);
-$router->get('/api/v1/admin/discounts/{id}', [DiscountController::class, 'getById'], [AuthMiddleware::class]);
-$router->put('/api/v1/admin/discounts/{id}', [DiscountController::class, 'update'], [AuthMiddleware::class]);
-$router->delete('/api/v1/admin/discounts/{id}', [DiscountController::class, 'delete'], [AuthMiddleware::class]);
+$router->get('/api/v1/admin/discounts', [DiscountController::class, 'index'], [UnifiedAuthMiddleware::class]);
+$router->post('/api/v1/admin/discounts', [DiscountController::class, 'create'], [AdminAuthMiddleware::class]);
+$router->get('/api/v1/admin/discounts/{id}', [DiscountController::class, 'getById'], [AdminAuthMiddleware::class]);
+$router->put('/api/v1/admin/discounts/{id}', [DiscountController::class, 'update'], [AdminAuthMiddleware::class]);
+$router->delete('/api/v1/admin/discounts/{id}', [DiscountController::class, 'delete'], [AdminAuthMiddleware::class]);
 
 $router->post('/api/v1/discounts/apply', [DiscountController::class, 'apply']);
 
 //order management
 
 $router->post('/api/v1/orders', [OrderController::class, 'create'], [AuthMiddleware::class]);
-$router->get('/api/v1/orders', [OrderController::class, 'getOrders'], [AuthMiddleware::class]);
-$router->get('/api/v1/orders/{id}', [OrderController::class, 'getOrderById'], [AuthMiddleware::class]);
-$router->put('/api/v1/admin/orders/{id}/status', [OrderController::class, 'updateStatus'], [AuthMiddleware::class]); // Admin-specific endpoint
-
+$router->get('/api/v1/orders', [OrderController::class, 'getOrders'], [UnifiedAuthMiddleware::class]);
+$router->get('/api/v1/orders/{id}', [OrderController::class, 'getOrderById'], [UnifiedAuthMiddleware::class]);
+$router->put('/api/v1/admin/orders/{id}/status', [OrderController::class, 'updateStatus'], [AdminAuthMiddleware::class]); // Admin-specific endpoint
+$router->get('/api/v1/cus/orders', [OrderController::class, 'getCustomerOrders'], [AuthMiddleware::class]);
 
 // user management
-$router->get('/api/v1/admin/users', [UserController::class, 'index'], [AuthMiddleware::class]);
-$router->put('/api/v1/admin/users/{id}/role', [UserController::class, 'updateUserRole'], [AuthMiddleware::class]);
-$router->delete('/api/v1/admin/users/{id}', [UserController::class, 'disableUser'], [AuthMiddleware::class]);
+$router->get('/api/v1/admin/users', [UserController::class, 'index'], [AdminAuthMiddleware::class]);
+$router->put('/api/v1/admin/users/{id}/role', [UserController::class, 'updateUserRole'], [AdminAuthMiddleware::class]);
+$router->delete('/api/v1/admin/users/{id}', [UserController::class, 'disableUser'], [AdminAuthMiddleware::class]);
 
 $requestUri = $_SERVER['REQUEST_URI'];
 $requestMethod = $_SERVER['REQUEST_METHOD'];

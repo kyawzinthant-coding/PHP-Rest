@@ -62,59 +62,84 @@ class AuthController
 
     public function login(Request $request): void
     {
-        $validator = new AuthValidation(); // Or new AuthValidation($request) if refactored
-
+        $validator = new AuthValidation();
         try {
             $validatedData = $validator->validateLogin();
-            $jwt = $this->authService->loginUser($validatedData); // This still generates the token string
+            $user = $this->authService->loginUser($validatedData);
 
-            // Set the JWT as an HTTP-Only cookie
-            $cookieName = 'accessToken';
-            $cookieValue = $jwt;
-            $expiry = time() + (int)($_ENV['JWT_EXPIRATION_TIME_SECONDS']);
-            $path = '/'; // Available on the entire domain
-            $domain = $_ENV['APP_DOMAIN'] ?? ''; // Set to your domain in .env for production, empty for localhost
-            $secure = isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'production'; // True if HTTPS in production
-            $httpOnly = true; // Crucial: JavaScript cannot access it
-            $sameSite = 'Lax'; // Or 'Strict' or 'None' (if 'None', $secure must be true)
+            // Generate the token
+            $jwt = $this->authService->generateToken($user['id'], $user['email'], $user['role']);
 
-            setcookie($cookieName, $cookieValue, [
-                'expires' => $expiry,
-                'path' => $path,
-                'domain' => $domain,
-                'secure' => $secure,
-                'httponly' => $httpOnly,
-                'samesite' => $sameSite,
+            // Set the customer-specific cookie
+            setcookie('accessToken', $jwt, [
+                'expires' => time() + (int)($_ENV['JWT_EXPIRATION_TIME_SECONDS']),
+                'path' => '/',
+                'domain' => $_ENV['APP_DOMAIN'] ?? '',
+                'secure' => ($_ENV['APP_ENV'] ?? 'development') === 'production',
+                'httponly' => true,
+                'samesite' => 'Lax',
             ]);
 
-            // You can also send the token in the response body
             http_response_code(200);
-            echo json_encode([
-                'status' => 'success',
-                'message' => 'Login successful. Access token set in cookie.',
-            ]);
-        } catch (ValidationException $e) {
-            http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => $e->getMessage(), 'errors' => $e->getErrors()]);
+            echo json_encode(['status' => 'success', 'message' => 'Login successful.']);
         } catch (AuthenticationException $e) {
             http_response_code(401);
             echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
         } catch (\Exception $e) {
-            error_log("AuthController::login Error: " . $e->getMessage());
             http_response_code(500);
-            echo json_encode(['status' => 'error', 'message' => 'An unexpected error occurred during login.']);
+            echo json_encode(['status' => 'error', 'message' => 'An unexpected error occurred.']);
         }
     }
 
+
+    public function adminLogin(Request $request): void
+    {
+        $validator = new AuthValidation();
+        try {
+            $validatedData = $validator->validateLogin();
+            $user = $this->authService->loginUser($validatedData);
+
+
+            if ($user['role'] !== 'admin') {
+                throw new AuthenticationException("Forbidden: You do not have permission to log in here.");
+            }
+
+            $jwt = $this->authService->generateToken($user['id'], $user['email'], $user['role']);
+
+            // Set the admin-specific cookie
+            setcookie('adminAccessToken', $jwt, [
+                'expires' => time() + (int)($_ENV['JWT_EXPIRATION_TIME_SECONDS']),
+                'path' => '/',
+                'domain' => $_ENV['APP_DOMAIN'] ?? '',
+                'secure' => ($_ENV['APP_ENV'] ?? 'development') === 'production',
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+
+            http_response_code(200);
+            echo json_encode(['status' => 'success', 'message' => 'Admin login successful.']);
+        } catch (AuthenticationException $e) {
+            http_response_code(401); // Can also be 403 for the forbidden error
+            echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'An unexpected error occurred.']);
+        }
+    }
     public function logout(): void
     {
-        $cookieName = 'accessToken';
+
+        $body = json_decode(file_get_contents('php://input'), true);
+        $scope = $body['scope'] ?? 'customer';
+
+        $cookieName = ($scope === 'admin') ? 'adminAccessToken' : 'accessToken';
+
         $path = '/';
         $domain = $_ENV['APP_DOMAIN'] ?? '';
         // To delete a cookie, set its expiration date to the past
         setcookie($cookieName, '', [
             'expires' => time() - 3600, // In the past
-            'path' => $path,
+            'path' => '/',
             'domain' => $domain,
             'secure' => isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'production',
             'httponly' => true,
@@ -127,6 +152,7 @@ class AuthController
 
     public function getCurrentUser(Request $request): void
     {
+
         $authenticatedUserData = $request->getAttribute('user'); // Get from AuthMiddleware
 
         if (!$authenticatedUserData || !isset($authenticatedUserData->id)) {
@@ -142,6 +168,48 @@ class AuthController
         if (!$fullUserDetails) {
             http_response_code(401);
             echo json_encode(['status' => 'error', 'message' => 'User not found in database.']);
+            return;
+        }
+
+        error_log(($fullUserDetails['role'] ?? 'user') . " user with ID " . $fullUserDetails['id'] . " is requesting their profile.");
+
+
+
+        http_response_code(200);
+        echo json_encode([
+            'status' => 'success',
+            'data' => [
+                'id' => $fullUserDetails['id'],
+                'email' => $fullUserDetails['email'],
+                'name' => $fullUserDetails['name'] ?? 'Unknown',
+                'role' => $fullUserDetails['role'] ?? 'user',
+            ]
+        ]);
+    }
+
+    public function getCurrentAdmin(Request $request): void
+    {
+
+        $authenticatedUserData = $request->getAttribute('user');
+
+        error_log("Admin user with ID " . ($authenticatedUserData->id ?? 'unknown') . " is requesting their profile.");
+
+        if (!$authenticatedUserData || !isset($authenticatedUserData->id)) {
+            // This case should ideally not happen if AuthMiddleware is effective
+            http_response_code(401);
+            echo json_encode(['status' => 'error', 'message' => 'Unauthorized or user data not found on request.']);
+            return;
+        }
+
+        $fullUserDetails = $this->userRepository->findById($authenticatedUserData->id);
+        if (!$fullUserDetails) {
+            http_response_code(401);
+            echo json_encode(['status' => 'error', 'message' => 'User not found in database.']);
+            return;
+        }
+
+        if ($fullUserDetails['role'] !== 'admin') {
+            echo json_encode(['status' => 'error', 'message' => 'Unauthorized.']);
             return;
         }
 

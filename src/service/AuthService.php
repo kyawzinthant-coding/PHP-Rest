@@ -33,7 +33,7 @@ class AuthService
     }
 
 
-    public function loginUser(array $data): string
+    public function loginUser(array $data): array
     {
         $user = $this->userRepository->findByEmail($data['email']);
 
@@ -46,7 +46,7 @@ class AuthService
         }
 
         // User authenticated, generate JWT
-        return $this->generateToken($user['id'], $user['email'], $user['role'], $user['name']);
+        return $user;
     }
 
     /**
