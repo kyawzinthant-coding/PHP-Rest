@@ -16,6 +16,7 @@ use App\Controller\Product\ProductController;
 use App\Exception\ValidationException;
 use App\Middleware\AuthMiddleware;
 use App\Controller\Brand\BrandController;
+use App\Controller\Chatbot\ChatbotController;
 use App\Controller\Dashboard\DashboardController;
 use App\Controller\Discount\DiscountController;
 use App\Controller\Order\OrderController;
@@ -128,6 +129,10 @@ $router->delete('/api/v1/admin/users/{id}', [UserController::class, 'disableUser
 
 
 $router->get('/api/v1/admin/dashboard', [DashboardController::class, 'getStats'], [AdminAuthMiddleware::class]);
+
+
+//chatbot routes
+$router->post('/api/v1/chatbot/query', [ChatbotController::class, 'handleQuery']);
 
 $requestUri = $_SERVER['REQUEST_URI'];
 $requestMethod = $_SERVER['REQUEST_METHOD'];

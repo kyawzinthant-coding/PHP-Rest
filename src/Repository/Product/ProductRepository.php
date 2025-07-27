@@ -148,6 +148,22 @@ class ProductRepository
         }
     }
 
+    public function findManyByName(array $names): array
+    {
+        if (empty($names)) {
+            return [];
+        }
+
+        // Creates a string of placeholders (?, ?, ?) for the IN clause
+        $placeholders = implode(',', array_fill(0, count($names), '?'));
+
+        $sql = "SELECT id, name, price, cloudinary_public_id FROM Products WHERE name IN ($placeholders)";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($names);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
 
     public function create(array $data): string
     {
