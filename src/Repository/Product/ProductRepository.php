@@ -65,6 +65,7 @@ class ProductRepository
                     p.gender_affinity,
                     p.is_active,
                     p.created_at,
+                    p.average_rating,
                     b.name AS brand_name,
                     c.name AS category_name
                 FROM products p

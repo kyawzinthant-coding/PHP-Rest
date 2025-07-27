@@ -16,6 +16,7 @@ use App\Controller\Product\ProductController;
 use App\Exception\ValidationException;
 use App\Middleware\AuthMiddleware;
 use App\Controller\Brand\BrandController;
+use App\Controller\Dashboard\DashboardController;
 use App\Controller\Discount\DiscountController;
 use App\Controller\Order\OrderController;
 use App\Controller\Review\ReviewController;
@@ -124,6 +125,9 @@ $router->get('/api/v1/cus/orders', [OrderController::class, 'getCustomerOrders']
 $router->get('/api/v1/admin/users', [UserController::class, 'index'], [AdminAuthMiddleware::class]);
 $router->put('/api/v1/admin/users/{id}/role', [UserController::class, 'updateUserRole'], [AdminAuthMiddleware::class]);
 $router->delete('/api/v1/admin/users/{id}', [UserController::class, 'disableUser'], [AdminAuthMiddleware::class]);
+
+
+$router->get('/api/v1/admin/dashboard', [DashboardController::class, 'getStats'], [AdminAuthMiddleware::class]);
 
 $requestUri = $_SERVER['REQUEST_URI'];
 $requestMethod = $_SERVER['REQUEST_METHOD'];
